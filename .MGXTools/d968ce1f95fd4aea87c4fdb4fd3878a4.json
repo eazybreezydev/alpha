@@ -1,0 +1,13 @@
+{
+    "resource": {
+        "block": "Editor",
+        "uuid": "8b28061f-a6d0-4a33-89e7-10739152eadd",
+        "enable_llm_stream": false,
+        "callback_url": ""
+    },
+    "current_file": null,
+    "current_line": 1,
+    "window": 50,
+    "enable_auto_lint": true,
+    "working_dir": "/data/chats/x67grd/workspace/dart_template"
+}

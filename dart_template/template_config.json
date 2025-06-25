@@ -1,0 +1,12 @@
+{
+  "description": "A modern Dart project template with pub package management. Features proper project structure, null safety implementation, and async programming support. Includes testing framework setup, proper package organization, and Flutter compatibility.",
+  "required_fields": [],
+  "required_files": [
+    "bin/main.dart",
+    "pubspec.yaml"
+  ],
+  "lang": "Dart",
+  "framework": "Dart",
+  "name": "dart_template",
+  "scene": "default_dart_project"
+} 
