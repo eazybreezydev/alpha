@@ -1,0 +1,39 @@
+name: easybreezy
+description: An app that helps homeowners reduce air conditioning use by notifying them when it's a good time to open their windows.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ">=2.19.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.5
+  provider: ^6.0.5
+  http: ^0.13.5
+  shared_preferences: ^2.1.1
+  flutter_local_notifications: ^14.1.1
+  geolocator: ^9.0.2
+  intl: ^0.18.1
+  flutter_compass: ^0.7.0
+  permission_handler: ^10.2.0
+  flutter_svg: ^2.0.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+  fonts:
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Regular.ttf
+        - asset: assets/fonts/Poppins-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Poppins-Medium.ttf
+          weight: 500
