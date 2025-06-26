@@ -11,19 +11,19 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.5
   provider: ^6.0.5
-  http: ^0.13.5
+  http: ^1.4.0
   shared_preferences: ^2.1.1
-  flutter_local_notifications: ^14.1.1
-  geolocator: ^9.0.2
-  intl: ^0.18.1
-  flutter_compass: ^0.7.0
-  permission_handler: ^10.2.0
+  flutter_local_notifications: ^19.3.0
+  geolocator: ^14.0.1
+  intl: ^0.20.2
+  flutter_compass: ^0.8.1
+  permission_handler: ^12.0.0+1
   flutter_svg: ^2.0.5
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.1
+  flutter_lints: ^6.0.0
 
 flutter:
   uses-material-design: true

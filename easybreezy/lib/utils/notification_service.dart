@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart'; // this gives you Colors and Color
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../models/weather_data.dart';
 import '../models/home_config.dart';
@@ -42,20 +43,17 @@ class NotificationService {
   }
 
   Future<void> _requestPermissions() async {
-    await notificationsPlugin
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.requestPermission();
+  // iOS permission request only
+  await notificationsPlugin
+      .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin>()
+      ?.requestPermissions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+}
 
-    await notificationsPlugin
-        .resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin>()
-        ?.requestPermissions(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
-  }
 
   Future<void> showWindowOpenNotification(
       WeatherData weatherData, String recommendationText) async {
@@ -139,12 +137,3 @@ class NotificationService {
   }
 }
 
-class Colors {
-  static const blue = Color(0xFF2196F3);
-  static const red = Color(0xFFF44336);
-}
-
-class Color {
-  final int value;
-  const Color(this.value);
-}

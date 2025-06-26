@@ -5,7 +5,7 @@ import 'package:geolocator/geolocator.dart';
 
 class WeatherService {
   // Replace with your actual API key when implementing
-  static const String apiKey = 'YOUR_OPENWEATHERMAP_API_KEY';
+  static const String apiKey = 'ada0f2af67b3dd1d9824bb6e33750983';
   static const String baseUrl = 'https://api.openweathermap.org/data/2.5';
 
   // Get current weather by location coordinates
