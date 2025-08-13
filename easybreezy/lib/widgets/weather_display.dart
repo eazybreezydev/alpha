@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/weather_data.dart';
+import '../providers/home_provider.dart';
+import '../providers/weather_provider.dart';
 
 class WeatherDisplay extends StatelessWidget {
   final WeatherData weatherData;
@@ -11,6 +14,10 @@ class WeatherDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isCelsius = Provider.of<HomeProvider>(context).isCelsius;
+    final tempUnit = isCelsius ? '°C' : '°F';
+    // Get city/town from WeatherProvider
+    final city = Provider.of<WeatherProvider>(context).city;
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(
@@ -29,6 +36,28 @@ class WeatherDisplay extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (city != null && city.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: Row(
+                  children: [
+                    const Icon(Icons.location_on, color: Colors.white, size: 20),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        city,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -40,17 +69,9 @@ class WeatherDisplay extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${weatherData.temperature.toStringAsFixed(0)}',
+                          '${weatherData.temperature.toStringAsFixed(0)}$tempUnit',
                           style: const TextStyle(
                             fontSize: 48, 
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const Text(
-                          '°F',
-                          style: TextStyle(
-                            fontSize: 24,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
@@ -59,7 +80,7 @@ class WeatherDisplay extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Feels like ${weatherData.feelsLike.toStringAsFixed(0)}°F',
+                      'Feels like ${weatherData.feelsLike.toStringAsFixed(0)}$tempUnit',
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.white.withOpacity(0.8),

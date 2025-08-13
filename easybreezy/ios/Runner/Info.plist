@@ -45,9 +45,5 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>This app uses your location to provide weather-based window recommendations.</string>
-	<key>NSLocationAlwaysUsageDescription</key>
-	<string>This app needs your location even in the background to recommend when to open or close windows.</string>
 </dict>
 </plist>

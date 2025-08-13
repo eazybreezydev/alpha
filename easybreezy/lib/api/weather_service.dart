@@ -9,8 +9,8 @@ class WeatherService {
   static const String baseUrl = 'https://api.openweathermap.org/data/2.5';
 
   // Get current weather by location coordinates
-  Future<WeatherData> getCurrentWeather(double lat, double lon) async {
-    final url = '$baseUrl/weather?lat=$lat&lon=$lon&units=imperial&appid=$apiKey';
+  Future<WeatherData> getCurrentWeather(double lat, double lon, {String units = 'imperial'}) async {
+    final url = '$baseUrl/weather?lat=$lat&lon=$lon&units=$units&appid=$apiKey';
     
     try {
       final response = await http.get(Uri.parse(url));
@@ -27,8 +27,8 @@ class WeatherService {
   }
 
   // Get weather forecast for the next few days
-  Future<WeatherForecast> getForecast(double lat, double lon) async {
-    final url = '$baseUrl/forecast?lat=$lat&lon=$lon&units=imperial&appid=$apiKey';
+  Future<WeatherForecast> getForecast(double lat, double lon, {String units = 'imperial'}) async {
+    final url = '$baseUrl/forecast?lat=$lat&lon=$lon&units=$units&appid=$apiKey';
     
     try {
       final response = await http.get(Uri.parse(url));
@@ -95,5 +95,25 @@ class WeatherService {
 
     // Get the current position
     return await Geolocator.getCurrentPosition();
+  }
+
+  // Get severe weather alerts (OpenWeatherMap One Call API)
+  Future<List<Map<String, dynamic>>> getSevereWeatherAlerts(double lat, double lon) async {
+    final url = 'https://api.openweathermap.org/data/3.0/onecall?lat=$lat&lon=$lon&appid=$apiKey';
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        if (jsonData['alerts'] != null) {
+          return List<Map<String, dynamic>>.from(jsonData['alerts']);
+        } else {
+          return [];
+        }
+      } else {
+        throw Exception('Failed to load weather alerts: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching weather alerts: $e');
+    }
   }
 }

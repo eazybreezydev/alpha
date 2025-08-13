@@ -4,6 +4,9 @@ class HomeConfig {
   final double comfortTempMin;
   final double comfortTempMax;
   final bool notificationsEnabled;
+  final String? address; // Add address field
+  final double? latitude; // Add latitude
+  final double? longitude; // Add longitude
 
   HomeConfig({
     required this.orientation,
@@ -11,6 +14,9 @@ class HomeConfig {
     this.comfortTempMin = 65.0, // Default lower comfort threshold in Fahrenheit
     this.comfortTempMax = 78.0, // Default upper comfort threshold in Fahrenheit
     this.notificationsEnabled = true,
+    this.address,
+    this.latitude,
+    this.longitude,
   });
 
   // Factory constructor to create a default home configuration
@@ -23,6 +29,9 @@ class HomeConfig {
         WindowDirection.south: false,
         WindowDirection.west: false,
       },
+      address: '',
+      latitude: null,
+      longitude: null,
     );
   }
 
@@ -33,6 +42,9 @@ class HomeConfig {
     double? comfortTempMin,
     double? comfortTempMax,
     bool? notificationsEnabled,
+    String? address,
+    double? latitude,
+    double? longitude,
   }) {
     return HomeConfig(
       orientation: orientation ?? this.orientation,
@@ -40,6 +52,9 @@ class HomeConfig {
       comfortTempMin: comfortTempMin ?? this.comfortTempMin,
       comfortTempMax: comfortTempMax ?? this.comfortTempMax,
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
+      address: address ?? this.address,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
     );
   }
 
@@ -56,6 +71,9 @@ class HomeConfig {
       'comfortTempMin': comfortTempMin,
       'comfortTempMax': comfortTempMax,
       'notificationsEnabled': notificationsEnabled,
+      'address': address,
+      'latitude': latitude,
+      'longitude': longitude,
     };
   }
 
@@ -69,9 +87,12 @@ class HomeConfig {
         WindowDirection.south: json['windows']['south'] as bool,
         WindowDirection.west: json['windows']['west'] as bool,
       },
-      comfortTempMin: json['comfortTempMin'] as double,
-      comfortTempMax: json['comfortTempMax'] as double,
+      comfortTempMin: (json['comfortTempMin'] as num).toDouble(),
+      comfortTempMax: (json['comfortTempMax'] as num).toDouble(),
       notificationsEnabled: json['notificationsEnabled'] as bool,
+      address: json['address'] as String?,
+      latitude: json['latitude'] != null ? (json['latitude'] as num).toDouble() : null,
+      longitude: json['longitude'] != null ? (json['longitude'] as num).toDouble() : null,
     );
   }
 

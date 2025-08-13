@@ -29,10 +29,10 @@ enum RecommendationType {
 class RecommendationEngine {
   // Main recommendation function
   WindowRecommendation getRecommendation(
-      WeatherData weatherData, HomeConfig homeConfig) {
+      WeatherData weatherData, HomeConfig homeConfig, {bool isCelsius = false}) {
     // Step 1: Check if temperature is within comfort range
     final bool tempInRange = _isTemperatureInComfortRange(
-        weatherData.temperature, homeConfig);
+        weatherData.temperature, homeConfig, isCelsius);
 
     // Step 2: Check if there are any external factors that would make opening windows undesirable
     final bool externalFactorsOk = _checkExternalFactors(weatherData);
@@ -52,9 +52,15 @@ class RecommendationEngine {
   }
 
   // Check if temperature is within user's comfort range
-  bool _isTemperatureInComfortRange(double temperature, HomeConfig homeConfig) {
-    return temperature >= homeConfig.comfortTempMin &&
-        temperature <= homeConfig.comfortTempMax;
+  bool _isTemperatureInComfortRange(double temperature, HomeConfig homeConfig, bool isCelsius) {
+    double min = homeConfig.comfortTempMin;
+    double max = homeConfig.comfortTempMax;
+    if (isCelsius) {
+      // Convert thresholds from F to C
+      min = (min - 32) * 5 / 9;
+      max = (max - 32) * 5 / 9;
+    }
+    return temperature >= min && temperature <= max;
   }
 
   // Check if external factors allow opening windows

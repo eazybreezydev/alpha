@@ -17,22 +17,27 @@ class RecommendationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: _getBorderColor(),
-          width: 2,
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Card(
+        elevation: 8,
+        color: Colors.white,
+        surfaceTintColor: Colors.white,
+        shadowColor: Colors.black.withOpacity(0.1),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: _getBorderColor(),
+            width: 2,
+          ),
         ),
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Title and icon
-            Row(
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Title and icon
+              Row(
               children: [
                 Icon(
                   _getRecommendationIcon(),
@@ -96,6 +101,17 @@ class RecommendationCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 if (recommendation.shouldOpenWindows) ...[
+                  // Show "Turn off AC" chip when windows should be opened
+                  Chip(
+                    avatar: const Icon(
+                      Icons.power_off,
+                      size: 16,
+                      color: Colors.green,
+                    ),
+                    label: const Text('Turn off AC'),
+                    backgroundColor: Colors.green.withOpacity(0.1),
+                  ),
+                  const SizedBox(width: 8),
                   TextButton.icon(
                     onPressed: () {
                       _showWindDirectionInfo(context);
@@ -130,6 +146,7 @@ class RecommendationCard extends StatelessWidget {
               ],
             ),
           ],
+        ),
         ),
       ),
     );
