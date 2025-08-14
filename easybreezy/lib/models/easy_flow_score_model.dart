@@ -189,7 +189,7 @@ class EasyFlowScoreModel {
       message = "Excellent conditions for fresh air!";
     } else if (score >= 50) {
       message = "Good time to open windows!";
-    } else if (score >= 35) {
+    } else if (score >= 40) { // Changed from 35 to 40 to be more restrictive
       message = "Moderate conditions - consider opening windows";
     } else {
       message = "Keep windows closed for now";
@@ -201,6 +201,8 @@ class EasyFlowScoreModel {
 
   // Get smart, adaptive status message for main display
   String getSmartStatusMessage() {
+    int score = calculateScore();
+    
     // Convert temperature to Celsius for consistent checking
     double tempCelsius;
     if (isCelsius) {
@@ -217,21 +219,28 @@ class EasyFlowScoreModel {
       windSpeedKmh = windSpeed * 1.60934;
     }
     
-    // Priority-based smart messaging
+    // Priority-based smart messaging - check for deal-breaker conditions first
     if (airQualityLevel.toLowerCase() != 'good') {
       return "Air quality concerns - keep closed";
-    } else if (tempCelsius > 28) {
-      return "Too hot - stay cool indoors";
-    } else if (tempCelsius < 14) {
+    } else if (tempCelsius > 26.1) { // Same as RecommendationCard threshold
+      return "Heat alert — shut windows to lock in cool air.";
+    } else if (tempCelsius < 16) { // Same as RecommendationCard threshold
       return "Too cold - keep warmth inside";
     } else if (windSpeedKmh > 25) {
       return "Too windy - avoid drafts";
-    } else if (tempCelsius >= 16 && tempCelsius <= 26 && windSpeedKmh >= 4 && windSpeedKmh <= 16) {
+    }
+    
+    // If no specific poor conditions, use score-based messaging that matches getStatusMessage()
+    if (score >= 80) {
       return "Perfect conditions - open wide!";
-    } else if (tempCelsius >= 14 && tempCelsius <= 28 && windSpeedKmh <= 25) {
+    } else if (score >= 65) {
+      return "Excellent conditions for fresh air!";
+    } else if (score >= 50) {
       return "Good time for fresh air!";
-    } else {
+    } else if (score >= 40) { // Changed from 35 to 40 to be more restrictive
       return "Moderate conditions - your choice";
+    } else {
+      return "Keep windows closed for now";
     }
   }
 

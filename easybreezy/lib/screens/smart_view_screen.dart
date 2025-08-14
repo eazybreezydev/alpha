@@ -4,10 +4,10 @@ import '../providers/weather_provider.dart';
 import '../providers/home_provider.dart';
 import '../widgets/local_ads_banner.dart';
 import '../widgets/smart_energy_advisor_card.dart';
-import '../widgets/comfort_efficiency_tracker.dart';
 import '../widgets/premium_upgrade_banner.dart';
+import '../widgets/predictive_window_recommendations_widget.dart';
 import '../models/smart_thermostat_model.dart';
-import '../models/comfort_efficiency_model.dart';
+import '../models/predictive_recommendation_model.dart';
 
 class SmartViewScreen extends StatelessWidget {
   const SmartViewScreen({Key? key}) : super(key: key);
@@ -194,48 +194,27 @@ class SmartViewScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 24), // Add spacing after Energy Advisor Card
 
-                      // Comfort Efficiency Tracker
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: ComfortEfficiencyTracker(
-                          efficiencyData: ComfortEfficiencyModel.mockData(
-                            isPremium: homeProvider.isPremiumUser, // Use provider's premium status
-                          ),
-                          onUpgradeTapped: () {
-                            // Navigate to premium upgrade screen or show modal
-                            showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text('Upgrade to Premium'),
-                                content: const Text(
-                                  'Unlock advanced energy insights, detailed comfort analytics, and personalized recommendations to maximize your savings!',
+                      // Predictive Window Recommendations Widget (DEMO)
+                      if (weatherData != null && weatherProvider.forecast != null)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: PredictiveWindowRecommendationsWidget(
+                            predictions: PredictiveRecommendationModel.fromForecast(
+                              forecastData: weatherProvider.forecast!.hourlyForecast,
+                              homeOrientation: homeConfig?.orientation.toString().split('.').last ?? 'North',
+                              isCelsius: isCelsius,
+                            ),
+                            onNotificationTapped: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Notification settings coming soon!'),
+                                  backgroundColor: Colors.blue,
                                 ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.of(context).pop(),
-                                    child: const Text('Maybe Later'),
-                                  ),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                      // Simulate premium upgrade for demo
-                                      homeProvider.upgradeToPremium();
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: const Text('Welcome to Premium! 🎉'),
-                                          backgroundColor: Colors.green.shade600,
-                                        ),
-                                      );
-                                    },
-                                    child: const Text('Upgrade Now'),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
+                              );
+                            },
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 24), // Add spacing after Comfort Efficiency Tracker
+                      if (weatherData != null && weatherProvider.forecast != null) const SizedBox(height: 24),
                       // ...other widgets from your old home screen...
                     ],
                   ),

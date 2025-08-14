@@ -10,7 +10,9 @@ import '../widgets/easy_flow_score_card.dart'; // Import EasyFlowScoreCard
 import '../widgets/wind_forecast_chart.dart'; // Import WindForecastChart
 import '../widgets/wind_level_card.dart'; // Import WindLevelCard
 import '../widgets/wind_flow_animation.dart'; // Import new wind flow system
+import '../widgets/energy_estimation_widget.dart'; // Import EnergyEstimationWidget
 import '../models/easy_flow_score_model.dart'; // Import EasyFlowScoreModel
+import '../models/energy_estimation_model.dart'; // Import EnergyEstimationModel
 
 class HomeDashboard extends StatelessWidget {
   const HomeDashboard({Key? key}) : super(key: key);
@@ -221,6 +223,41 @@ class HomeDashboard extends StatelessWidget {
                               child: LocalAdsBanner(),
                             ),
                             const SizedBox(height: 24),
+                            // Energy Estimation Widget
+                            if (weatherData != null)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: EnergyEstimationWidget(
+                                  estimationData: EnergyEstimationModel.fromWeatherData(
+                                    temperature: isCelsius 
+                                      ? weatherData.temperature 
+                                      : (weatherData.temperature - 32) * 5/9, // Convert F to C for energy calculations
+                                    humidity: weatherData.humidity,
+                                    windSpeed: weatherData.windSpeed,
+                                    airQuality: 'Good', // Default air quality - can be enhanced later with real AQI API
+                                    flowScore: () {
+                                      // Create EasyFlowScoreModel instance to calculate score
+                                      final scoreModel = EasyFlowScoreModel(
+                                        windSpeed: weatherData.windSpeed,
+                                        windDirection: weatherData.windDirection,
+                                        temperature: weatherData.temperature,
+                                        humidity: weatherData.humidity,
+                                        airQualityLevel: 'Good', // Default air quality
+                                        homeOrientation: homeProvider.homeConfig?.orientation.toString().split('.').last ?? 'North', // Default orientation
+                                        isCelsius: false, // WeatherData comes in user's preferred units
+                                      );
+                                      return scoreModel.calculateScore();
+                                    }(),
+                                    recommendation: homeProvider.homeConfig != null 
+                                      ? 'Smart recommendation based on your home setup'
+                                      : 'Set up your home configuration for personalized recommendations',
+                                  ),
+                                  onLearnMoreTapped: () {
+                                    // This will be handled by the widget's info button
+                                  },
+                                ),
+                              ),
+                            if (weatherData != null) const SizedBox(height: 24),
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16),
                               child: SmartTipsCard(),
