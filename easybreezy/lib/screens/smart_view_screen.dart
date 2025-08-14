@@ -6,6 +6,7 @@ import '../widgets/local_ads_banner.dart';
 import '../widgets/smart_energy_advisor_card.dart';
 import '../widgets/predictive_window_recommendations_widget.dart';
 import '../widgets/smart_thermostat_connection_widget.dart';
+import '../screens/connect_smart_thermostat_page.dart';
 import '../models/smart_thermostat_model.dart';
 import '../models/predictive_recommendation_model.dart';
 
@@ -170,34 +171,10 @@ class SmartViewScreen extends StatelessWidget {
                             );
                           },
                           onUpgradeTapped: () {
-                            // Handle premium upgrade for thermostat features
-                            showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text('Upgrade to Premium'),
-                                content: const Text(
-                                  'Unlock smart thermostat integration and advanced climate control features for just \$1.99/month. Typical energy savings exceed the subscription cost!',
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.of(context).pop(),
-                                    child: const Text('Maybe Later'),
-                                  ),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                      // Simulate premium upgrade for demo
-                                      homeProvider.upgradeToPremium();
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: const Text('Welcome to Premium! Now you can connect your thermostat! 🎉'),
-                                          backgroundColor: Colors.green.shade600,
-                                        ),
-                                      );
-                                    },
-                                    child: const Text('Upgrade - \$1.99/month'),
-                                  ),
-                                ],
+                            // Navigate to Connect Smart Thermostat page
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const ConnectSmartThermostatPage(),
                               ),
                             );
                           },
