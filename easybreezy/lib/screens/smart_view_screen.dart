@@ -4,8 +4,8 @@ import '../providers/weather_provider.dart';
 import '../providers/home_provider.dart';
 import '../widgets/local_ads_banner.dart';
 import '../widgets/smart_energy_advisor_card.dart';
-import '../widgets/premium_upgrade_banner.dart';
 import '../widgets/predictive_window_recommendations_widget.dart';
+import '../widgets/smart_thermostat_connection_widget.dart';
 import '../models/smart_thermostat_model.dart';
 import '../models/predictive_recommendation_model.dart';
 
@@ -97,44 +97,6 @@ class SmartViewScreen extends StatelessWidget {
           ),
           child: Column(
             children: [
-              // Sticky Premium Upgrade Banner (only show for non-premium users)
-              if (!homeProvider.isPremiumUser)
-                SafeArea(
-                  bottom: false,
-                  child: PremiumUpgradeBanner(
-                    onUpgradeTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: const Text('Upgrade to Premium'),
-                          content: const Text(
-                            'Unlock advanced energy insights, detailed comfort analytics, and personalized recommendations to maximize your savings!',
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.of(context).pop(),
-                              child: const Text('Maybe Later'),
-                            ),
-                            ElevatedButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                                // Simulate premium upgrade for demo
-                                homeProvider.upgradeToPremium();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: const Text('Welcome to Premium! 🎉'),
-                                    backgroundColor: Colors.green.shade600,
-                                  ),
-                                );
-                              },
-                              child: const Text('Upgrade Now'),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
               // Main content
               Expanded(
                 child: SingleChildScrollView(
@@ -168,6 +130,77 @@ class SmartViewScreen extends StatelessWidget {
                               onPressed: () => weatherProvider.refreshWeatherData(context),
                             ),
                           ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+                      // Smart Thermostat Connection Widget
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: SmartThermostatConnectionWidget(
+                          isPremiumUser: homeProvider.isPremiumUser,
+                          onConnectTapped: () {
+                            // Handle thermostat connection
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Connect Thermostat'),
+                                content: const Text(
+                                  'Choose your thermostat brand to begin the connection process.',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.of(context).pop(),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: const Text('Thermostat connection coming soon! 🌡️'),
+                                          backgroundColor: Colors.blue.shade600,
+                                        ),
+                                      );
+                                    },
+                                    child: const Text('Continue'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                          onUpgradeTapped: () {
+                            // Handle premium upgrade for thermostat features
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Upgrade to Premium'),
+                                content: const Text(
+                                  'Unlock smart thermostat integration and advanced climate control features for just \$1.99/month. Typical energy savings exceed the subscription cost!',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.of(context).pop(),
+                                    child: const Text('Maybe Later'),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                      // Simulate premium upgrade for demo
+                                      homeProvider.upgradeToPremium();
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: const Text('Welcome to Premium! Now you can connect your thermostat! 🎉'),
+                                          backgroundColor: Colors.green.shade600,
+                                        ),
+                                      );
+                                    },
+                                    child: const Text('Upgrade - \$1.99/month'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
                         ),
                       ),
 
