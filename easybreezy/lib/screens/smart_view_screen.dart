@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/weather_provider.dart';
 import '../providers/home_provider.dart';
-import '../widgets/local_ads_banner.dart';
 import '../widgets/smart_energy_advisor_card.dart';
 import '../widgets/predictive_window_recommendations_widget.dart';
 import '../widgets/smart_thermostat_connection_widget.dart';
+import '../widgets/carbon_footprint_widget.dart';
 import '../screens/connect_smart_thermostat_page.dart';
 import '../models/smart_thermostat_model.dart';
 import '../models/predictive_recommendation_model.dart';
+import '../models/carbon_footprint_model.dart';
 
 class SmartViewScreen extends StatelessWidget {
   const SmartViewScreen({Key? key}) : super(key: key);
@@ -203,6 +204,93 @@ class SmartViewScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 24), // Add spacing after Energy Advisor Card
+
+                      // Carbon Footprint Tracking Widget
+                      if (weatherData != null)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: CarbonFootprintWidget(
+                            carbonData: CarbonFootprintModel.fromWeatherData(
+                              weatherData: weatherData,
+                              isCelsius: isCelsius,
+                              homeSquareFootage: 2000.0, // Default home size, could be configurable later
+                              region: 'CA', // You could get this from location services
+                              hasThermostatConnected: false, // This would come from user settings
+                              currentThermostatTemp: 72.0, // This would come from connected thermostat
+                            ),
+                            onViewFullReport: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Row(
+                                    children: [
+                                      const Icon(Icons.assessment, color: Colors.white),
+                                      const SizedBox(width: 8),
+                                      const Expanded(
+                                        child: Text('Monthly carbon report feature coming soon!'),
+                                      ),
+                                    ],
+                                  ),
+                                  backgroundColor: Colors.green.shade600,
+                                  duration: const Duration(seconds: 3),
+                                ),
+                              );
+                            },
+                            onApplyRecommendation: (recommendation) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Row(
+                                    children: [
+                                      Text(recommendation.icon),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text('Applied: ${recommendation.title}'),
+                                      ),
+                                    ],
+                                  ),
+                                  backgroundColor: Colors.green.shade600,
+                                  duration: const Duration(seconds: 3),
+                                ),
+                              );
+                            },
+                            onConnectThermostat: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => const ConnectSmartThermostatPage(),
+                                ),
+                              );
+                            },
+                            onAutoApplyThermostat: (action) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Row(
+                                    children: [
+                                      Text(action.icon),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text('Auto-applied: ${action.title}'),
+                                      ),
+                                    ],
+                                  ),
+                                  backgroundColor: Colors.green.shade600,
+                                  duration: const Duration(seconds: 3),
+                                  action: SnackBarAction(
+                                    label: 'Undo',
+                                    textColor: Colors.white,
+                                    onPressed: () {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Thermostat setting reverted'),
+                                          backgroundColor: Colors.orange,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      if (weatherData != null) const SizedBox(height: 24),
 
                       // Predictive Window Recommendations Widget (DEMO)
                       if (weatherData != null && weatherProvider.forecast != null)
