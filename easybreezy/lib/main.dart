@@ -7,6 +7,8 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'providers/home_provider.dart';
 import 'providers/weather_provider.dart';
 import 'providers/smart_home_provider.dart';
+import 'providers/local_ads_provider.dart';
+import 'providers/quick_tips_provider.dart';
 import 'screens/splash_screen.dart'; // Import SplashScreen
 import 'utils/notification_service.dart';
 import 'services/firebase_messaging_service.dart';
@@ -82,6 +84,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => HomeProvider()),
         ChangeNotifierProvider(create: (_) => WeatherProvider()),
         ChangeNotifierProvider(create: (_) => SmartHomeProvider()),
+        ChangeNotifierProvider(create: (_) => LocalAdsProvider()),
+        ChangeNotifierProvider(create: (_) => QuickTipsProvider()),
       ],
       child: MaterialApp(
         title: 'EasyBreezy',

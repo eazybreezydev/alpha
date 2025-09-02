@@ -5,7 +5,7 @@ import '../providers/weather_provider.dart';
 import '../providers/home_provider.dart';
 import '../providers/smart_home_provider.dart';
 import '../widgets/smart_tips_card.dart'; // Import SmartTipsCard
-import '../widgets/local_ads_banner.dart'; // Import LocalAdsBanner
+import '../widgets/local_ads_widget.dart'; // Import LocalAdsWidget
 import '../widgets/easy_flow_score_card.dart'; // Import EasyFlowScoreCard
 import '../widgets/wind_forecast_chart.dart'; // Import WindForecastChart
 import '../widgets/wind_level_card.dart'; // Import WindLevelCard
@@ -217,11 +217,8 @@ class HomeDashboard extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 24),
-                            // Add LocalAdsBanner above tips
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              child: LocalAdsBanner(),
-                            ),
+                            // Add LocalAdsWidget above tips
+                            const LocalAdsWidget(),
                             const SizedBox(height: 24),
                             // Energy Estimation Widget
                             if (weatherData != null)
