@@ -6,6 +6,7 @@ import '../widgets/smart_energy_advisor_card.dart';
 import '../widgets/predictive_window_recommendations_widget.dart';
 import '../widgets/smart_thermostat_connection_widget.dart';
 import '../widgets/carbon_footprint_widget.dart';
+import '../widgets/thermostat_control_card.dart';
 import '../screens/connect_smart_thermostat_page.dart';
 import '../models/smart_thermostat_model.dart';
 import '../models/predictive_recommendation_model.dart';
@@ -313,6 +314,38 @@ class SmartViewScreen extends StatelessWidget {
                           ),
                         ),
                       if (weatherData != null && weatherProvider.forecast != null) const SizedBox(height: 24),
+
+                      // Thermostat Control Card
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: ThermostatControlCard(
+                          thermostatName: 'Living Room Thermostat',
+                          currentTemperature: 72.0,
+                          targetTemperature: 70.0,
+                          currentMode: ThermostatMode.cooling,
+                          onTargetTemperatureChanged: (temperature) {
+                            // Handle target temperature change
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Target temperature set to ${temperature.toStringAsFixed(0)}°F'),
+                                backgroundColor: Colors.blue.shade600,
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                          onModeChanged: (mode) {
+                            // Handle mode change
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Thermostat mode changed to ${mode.displayName}'),
+                                backgroundColor: Colors.green.shade600,
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 24),
                       // ...other widgets from your old home screen...
                     ],
                   ),

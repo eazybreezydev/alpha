@@ -50,16 +50,7 @@ class SmartEnergyAdvisorCard extends StatelessWidget {
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              gradient: hasOpportunity
-                  ? LinearGradient(
-                      colors: [
-                        Colors.green.shade50,
-                        Colors.white,
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    )
-                  : null,
+              color: Colors.white,
             ),
             child: Padding(
               padding: const EdgeInsets.all(20.0),

@@ -72,13 +72,7 @@ class _SmartThermostatConnectionWidgetState extends State<SmartThermostatConnect
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
-                  gradient: LinearGradient(
-                    colors: widget.isPremiumUser 
-                        ? [Colors.blue.shade50, Colors.white]
-                        : [Colors.orange.shade50, Colors.white],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: Colors.white,
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(20.0),

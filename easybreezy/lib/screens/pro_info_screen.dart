@@ -4,6 +4,7 @@ import '../providers/home_provider.dart';
 import '../providers/smart_home_provider.dart';
 import '../widgets/premium_upgrade_banner.dart';
 import 'trusted_partners_page.dart';
+import 'legal_screen.dart';
 
 class ProInfoScreen extends StatelessWidget {
   const ProInfoScreen({Key? key}) : super(key: key);
@@ -155,6 +156,19 @@ class ProInfoScreen extends StatelessWidget {
                     title: const Text("Today's Green Tip"),
                     content: const Text('Open your windows for fresh air instead of running the AC whenever possible. Small changes add up!'),
                     actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 18),
+            ProInfoButton(
+              label: 'Legal',
+              icon: Icons.gavel,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const LegalScreen(),
                   ),
                 );
               },

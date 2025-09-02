@@ -34,7 +34,7 @@ class FloatingMenuBar extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildIcon(context, Icons.home_rounded, 0, 'Home'),
-              _buildIcon(context, Icons.diamond_outlined, 1, 'Smart'),
+              _buildIcon(context, Icons.wifi, 1, 'Smart'),
               _buildIcon(context, Icons.settings_rounded, 2, 'Settings'),
               _buildIcon(context, Icons.info_outline, 3, 'Pro'),
             ],

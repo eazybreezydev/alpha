@@ -188,18 +188,9 @@ class _PredictiveWindowRecommendationsWidgetState
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       color: Colors.white,
       child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: LinearGradient(
-            colors: [
-              urgentRecommendation?.priority == 'high' 
-                ? Colors.red.shade50
-                : Colors.blue.shade50,
-              Colors.white,
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+        decoration: const BoxDecoration(
+          borderRadius: BorderRadius.all(Radius.circular(16)),
+          color: Colors.white,
         ),
         child: Padding(
           padding: const EdgeInsets.all(20.0),
