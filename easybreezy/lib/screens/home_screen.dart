@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/weather_provider.dart';
 import '../providers/smart_home_provider.dart';
-import '../utils/recommendation_engine.dart';
 import '../widgets/home_dashboard.dart';
 import '../services/auto_refresh_service.dart';
 
@@ -14,7 +13,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final RecommendationEngine _recommendationEngine = RecommendationEngine();
   final AutoRefreshService _autoRefreshService = AutoRefreshService();
   bool _isRefreshing = false;
 
