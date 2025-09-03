@@ -484,7 +484,6 @@ class RecommendationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     String title = '';
     String subtitle = '';
-    IconData icon = Icons.info_outline;
     Color color = Colors.blueGrey;
 
     // Use correct thresholds for unit
@@ -504,182 +503,199 @@ class RecommendationCard extends StatelessWidget {
     if (aqiLevel != 'Good') {
       title = 'Keep Windows Closed';
       subtitle = 'Air quality is not ideal for open windows.';
-      icon = Icons.warning_amber_rounded;
       color = Colors.orangeAccent;
       print('  Decision: Keep closed - Bad AQI');
     } else if (temperature >= hotThreshold) {
       title = 'Keep Windows Closed';
       subtitle = 'It\'s too hot outside for open windows.';
-      icon = Icons.error_outline_rounded; // Alert badge icon
       color = Colors.redAccent; // Use red for alert if too hot
       print('  Decision: Keep closed - Too hot');
     } else if (temperature <= coldThreshold) {
       title = 'Keep Windows Closed';
       subtitle = 'It may be too cold to open your windows.';
-      icon = Icons.ac_unit_rounded;
       color = Colors.lightBlueAccent;
       print('  Decision: Keep closed - Too cold');
     } else if (windSpeedKmh >= 25) { // Use consistent 25 km/h threshold
       title = 'Keep Windows Closed';
       subtitle = 'It is too windy to open your windows.';
-      icon = Icons.air_rounded;
       color = Colors.cyanAccent;
       print('  Decision: Keep closed - Too windy');
     } else {
       title = 'Open Windows Recommended';
       subtitle = 'Now is a great time to open your windows!';
-      icon = Icons.air_rounded; // Breeze icon
       color = Colors.blueAccent; // Use blue for perfect conditions
       print('  Decision: Open windows - Good conditions');
     }
 
-    return Stack(
-      children: [
-        Container(
-          width: double.infinity,
-          margin: const EdgeInsets.fromLTRB(24, 8, 24, 0), // Reduced top margin from 16 to 8
-          padding: const EdgeInsets.fromLTRB(18, 18, 18, 50), // Increased bottom padding to make room for buttons
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.13),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: color, width: 1.5),
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0), // Consistent with other widgets
+      child: Card(
+        elevation: 12, // Higher elevation to make it stand out
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: color.withOpacity(0.3), // Subtle colored border
+            width: 2,
           ),
-          child: Row(
+        ),
+        color: Colors.white,
+        surfaceTintColor: Colors.white,
+        shadowColor: color.withOpacity(0.2), // Colored shadow
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, color: color, size: 32),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              // Header with colored accent bar
+              Container(
+                width: double.infinity,
+                child: Row(
                   children: [
-                    Text(
-                      title,
-                      style: TextStyle(
+                    // Colored accent indicator
+                    Container(
+                      width: 4,
+                      height: 40,
+                      decoration: BoxDecoration(
                         color: color,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
+                        borderRadius: BorderRadius.circular(2),
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        color: color.withOpacity(0.85),
-                        fontSize: 15,
+                    const SizedBox(width: 16),
+                    // Text content
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: TextStyle(
+                              color: Colors.grey.shade800, // Dark text for contrast
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            subtitle,
+                            style: TextStyle(
+                              color: Colors.grey.shade600, // Medium gray for subtitle
+                              fontSize: 14,
+                              height: 1.3,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
+              
+              // Action buttons section
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (temperature >= hotThreshold)
+                    Consumer<SmartHomeProvider>(
+                      builder: (context, smartHomeProvider, _) {
+                        return GestureDetector(
+                          onTap: () => _handleTurnOnAC(context, smartHomeProvider),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.red.withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (smartHomeProvider.isLoading)
+                                  const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  )
+                                else
+                                  const Icon(Icons.ac_unit_rounded, color: Colors.white, size: 16),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  'Turn on AC',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  if (title == 'Open Windows Recommended')
+                    Consumer<SmartHomeProvider>(
+                      builder: (context, smartHomeProvider, _) {
+                        return GestureDetector(
+                          onTap: () => _handleTurnOffAC(context, smartHomeProvider),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.green,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.green.withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (smartHomeProvider.isLoading)
+                                  const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  )
+                                else
+                                  const Icon(Icons.window, color: Colors.white, size: 16),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  'Turn off AC',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                ],
+              ),
             ],
           ),
         ),
-        if (temperature >= hotThreshold)
-          Positioned(
-            bottom: 12,
-            right: 32,
-            child: Consumer<SmartHomeProvider>(
-              builder: (context, smartHomeProvider, _) {
-                return GestureDetector(
-                  onTap: () => _handleTurnOnAC(context, smartHomeProvider),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.red, // Changed to red
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.red.withOpacity(0.18),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (smartHomeProvider.isLoading)
-                          const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        else
-                          Icon(Icons.ac_unit_rounded, color: Colors.white, size: 18), // Snowflake icon
-                        const SizedBox(width: 6),
-                        Text(
-                          'Turn on AC',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                            letterSpacing: 0.2,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        if (title == 'Open Windows Recommended')
-          Positioned(
-            bottom: 12,
-            right: 32,
-            child: Consumer<SmartHomeProvider>(
-              builder: (context, smartHomeProvider, _) {
-                return GestureDetector(
-                  onTap: () => _handleTurnOffAC(context, smartHomeProvider),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.green, // Back to green for energy saving
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.green.withOpacity(0.18),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (smartHomeProvider.isLoading)
-                          const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        else
-                          Icon(Icons.power_off, color: Colors.white, size: 18), // Power off icon
-                        const SizedBox(width: 6),
-                        Text(
-                          'Turn off AC',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                            letterSpacing: 0.2,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-      ],
+      ),
     );
   }
 }
