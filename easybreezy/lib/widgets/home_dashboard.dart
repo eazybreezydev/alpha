@@ -130,6 +130,9 @@ class HomeDashboard extends StatelessWidget {
                               windSpeed: weatherProvider.currentWeather?.windSpeed ?? 0,
                               aqiLevel: 'Good', // Replace with real AQI if available
                               isCelsius: homeProvider.isCelsius,
+                              windDirection: weatherProvider.currentWeather?.windDirection ?? 'N',
+                              humidity: weatherProvider.currentWeather?.humidity ?? 45.0,
+                              condition: 'clear',
                             ),
                             const SizedBox(height: 24), // Reduced margin between card and house image from 40 to 24
                             // 3D-style house icon with wind flowing behind it
@@ -472,12 +475,19 @@ class RecommendationCard extends StatelessWidget {
   final double windSpeed;
   final String aqiLevel;
   final bool isCelsius;
+  final String windDirection;
+  final double humidity;
+  final String condition;
+  
   const RecommendationCard({
     Key? key,
     required this.temperature,
     required this.windSpeed,
     required this.aqiLevel,
     required this.isCelsius,
+    required this.windDirection,
+    required this.humidity,
+    required this.condition,
   }) : super(key: key);
 
   @override
@@ -500,30 +510,48 @@ class RecommendationCard extends StatelessWidget {
       windSpeedKmh = windSpeed * 1.60934;
     }
 
+    // Helper function to format temperature
+    String formatTemp(double temp) {
+      return isCelsius ? '${temp.round()}°C' : '${temp.round()}°F';
+    }
+    
+    // Helper function to format wind description
+    String getWindDescription() {
+      if (windSpeedKmh < 5) return 'calm conditions';
+      if (windSpeedKmh < 15) return 'gentle $windDirection breeze';
+      if (windSpeedKmh < 25) return 'moderate $windDirection wind';
+      return 'strong $windDirection winds at ${windSpeedKmh.round()} km/h';
+    }
+    
+    // Helper function to format air quality
+    String getAirQualityDescription() {
+      return aqiLevel.toLowerCase() == 'good' ? 'Air quality is good' : 'Air quality is ${aqiLevel.toLowerCase()}';
+    }
+
     if (aqiLevel != 'Good') {
-      title = 'Keep Windows Closed';
-      subtitle = 'Air quality is not ideal for open windows.';
+      title = 'Windows Should Stay Closed Today';
+      subtitle = 'Temperature is ${formatTemp(temperature)} with ${getWindDescription()}. ${getAirQualityDescription()}, so it\'s better to keep windows closed.';
       color = Colors.orangeAccent;
       print('  Decision: Keep closed - Bad AQI');
     } else if (temperature >= hotThreshold) {
-      title = 'Keep Windows Closed';
-      subtitle = 'It\'s too hot outside for open windows.';
-      color = Colors.redAccent; // Use red for alert if too hot
+      title = 'Keep Cool with Closed Windows';
+      subtitle = 'It\'s warm outside at ${formatTemp(temperature)} with ${getWindDescription()}. Stay comfortable and energy-efficient by keeping windows closed.';
+      color = Colors.redAccent;
       print('  Decision: Keep closed - Too hot');
     } else if (temperature <= coldThreshold) {
-      title = 'Keep Windows Closed';
-      subtitle = 'It may be too cold to open your windows.';
+      title = 'Bundle Up - Windows Closed Today';
+      subtitle = 'Temperature is a chilly ${formatTemp(temperature)} with ${getWindDescription()}. Too cold for open windows - stay warm indoors.';
       color = Colors.lightBlueAccent;
       print('  Decision: Keep closed - Too cold');
-    } else if (windSpeedKmh >= 25) { // Use consistent 25 km/h threshold
-      title = 'Keep Windows Closed';
-      subtitle = 'It is too windy to open your windows.';
+    } else if (windSpeedKmh >= 25) {
+      title = 'Windows Closed Due to Wind';
+      subtitle = 'Temperature is comfortable at ${formatTemp(temperature)}, but ${getWindDescription()} make it unsafe to have windows open.';
       color = Colors.cyanAccent;
       print('  Decision: Keep closed - Too windy');
     } else {
-      title = 'Open Windows Recommended';
-      subtitle = 'Now is a great time to open your windows!';
-      color = Colors.blueAccent; // Use blue for perfect conditions
+      title = 'Perfect Time to Let Fresh Air In';
+      subtitle = 'Comfortable ${formatTemp(temperature)} with ${getWindDescription()}. ${getAirQualityDescription()} and humidity at ${humidity.round()}% - ideal for fresh air!';
+      color = Colors.blueAccent;
       print('  Decision: Open windows - Good conditions');
     }
 
@@ -596,6 +624,7 @@ class RecommendationCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
+                  // Show Turn on AC button when it's hot
                   if (temperature >= hotThreshold)
                     Consumer<SmartHomeProvider>(
                       builder: (context, smartHomeProvider, _) {
@@ -643,7 +672,8 @@ class RecommendationCard extends StatelessWidget {
                         );
                       },
                     ),
-                  if (title == 'Open Windows Recommended')
+                  // Show Turn off AC button when conditions are perfect for windows
+                  if (title == 'Perfect Time to Let Fresh Air In')
                     Consumer<SmartHomeProvider>(
                       builder: (context, smartHomeProvider, _) {
                         return GestureDetector(
