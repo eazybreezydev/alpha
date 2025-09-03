@@ -221,13 +221,16 @@ class EasyFlowScoreModel {
     
     // Priority-based smart messaging - check for deal-breaker conditions first
     if (airQualityLevel.toLowerCase() != 'good') {
-      return "Air quality concerns - keep closed";
+      return "Air quality concerns ($airQualityLevel) - keep closed";
     } else if (tempCelsius > 26.1) { // Same as RecommendationCard threshold
-      return "Heat alert — shut windows to lock in cool air.";
+      String tempDetail = formatTemperature(temperature, isCelsius);
+      return "Heat alert ($tempDetail) — shut windows to lock in cool air.";
     } else if (tempCelsius < 16) { // Same as RecommendationCard threshold
-      return "Too cold - keep warmth inside";
+      String tempDetail = formatTemperature(temperature, isCelsius);
+      return "Too cold ($tempDetail) - keep warmth inside";
     } else if (windSpeedKmh > 25) {
-      return "Too windy - avoid drafts";
+      String windDetail = formatWindSpeed(windSpeed, isCelsius);
+      return "Too windy ($windDetail) - avoid drafts";
     }
     
     // If no specific poor conditions, use score-based messaging that matches getStatusMessage()
@@ -294,7 +297,7 @@ class EasyFlowScoreModel {
 
     // Check for extreme wind conditions (using km/h thresholds)
     if (windSpeedKmh > 40) { // ~25 mph
-      String windDirectionName = _getWindDirectionName(windDirection);
+      String windDirectionName = getWindDirectionName(windDirection);
       return "It's too windy to open windows. Strong gusts from the $windDirectionName may cause discomfort or drafts.";
     }
 
@@ -325,7 +328,7 @@ class EasyFlowScoreModel {
         windSpeedKmh >= 8 && windSpeedKmh <= 24 && // ~5-15 mph converted to km/h
         tempCelsius >= 18 && tempCelsius <= 25) {
       
-      List<String> optimalWindows = _getOptimalWindows();
+      List<String> optimalWindows = getOptimalWindows();
       if (optimalWindows.isNotEmpty) {
         String windowsText = optimalWindows.length == 2 
             ? "${optimalWindows[0]} and ${optimalWindows[1]} facing windows"
@@ -335,7 +338,10 @@ class EasyFlowScoreModel {
             ? "for the next $forecastHoursClear hours"
             : "for the next hour";
             
-        return "Perfect conditions for cross-ventilation $hoursText! Open your $windowsText.";
+        String windDetail = formatWindSpeed(windSpeed, isCelsius);
+        String windDirName = getWindDirectionName(windDirection);
+        
+        return "Perfect conditions for cross-ventilation $hoursText! Open your $windowsText for optimal airflow. Current wind: $windDetail from the $windDirName.";
       }
     }
 
@@ -344,35 +350,49 @@ class EasyFlowScoreModel {
         windSpeedKmh >= 5 && windSpeedKmh <= 32 && // ~3-20 mph converted to km/h
         tempCelsius >= 16 && tempCelsius <= 27) {
       
-      List<String> recommendedWindows = _getOptimalWindows();
+      List<String> recommendedWindows = getOptimalWindows();
       if (recommendedWindows.isNotEmpty) {
         String windowsText = recommendedWindows.length == 2 
             ? "${recommendedWindows[0]} and ${recommendedWindows[1]} facing windows"
             : "${recommendedWindows[0]} facing windows";
             
-        return "Good conditions for fresh air! Consider opening your $windowsText for natural ventilation.";
+        String windDetail = formatWindSpeed(windSpeed, isCelsius);
+        String windDirName = getWindDirectionName(windDirection);
+        String tempDetail = formatTemperature(temperature, isCelsius);
+        
+        return "Good conditions for fresh air! Open your $windowsText for natural ventilation. Wind: $windDetail from the $windDirName. Temperature: $tempDetail.";
       }
       
-      return "Good conditions for opening windows! Fresh air will help improve indoor air quality.";
+      String windDetail = formatWindSpeed(windSpeed, isCelsius);
+      String windDirName = getWindDirectionName(windDirection);
+      return "Good conditions for opening windows! Fresh air will help improve indoor air quality. Current wind: $windDetail from the $windDirName.";
     }
 
     // Light wind conditions
     if (windSpeedKmh < 5 && tempCelsius >= 18 && tempCelsius <= 28) { // Extended from 25 to 28
+      String tempDetail = formatTemperature(temperature, isCelsius);
+      String windDetail = formatWindSpeed(windSpeed, isCelsius);
+      
       if (tempCelsius > 26) {
-        return "Light winds today, but it's getting warm. Consider opening windows briefly during cooler parts of the day.";
+        return "Light winds today ($windDetail), but it's getting warm ($tempDetail). Consider opening windows briefly during cooler parts of the day.";
       } else {
-        return "Light winds today. Opening multiple windows will help create gentle air circulation throughout your home.";
+        return "Light winds today ($windDetail). Opening multiple windows will help create gentle air circulation throughout your home. Current temperature: $tempDetail.";
       }
     }
 
     // High humidity but good temperature
     if (humidity > 80 && tempCelsius >= 20 && tempCelsius <= 26) {
-      return "It's quite humid outside. Brief ventilation can help, but avoid prolonged window opening.";
+      String tempDetail = formatTemperature(temperature, isCelsius);
+      return "It's quite humid outside (${humidity.toStringAsFixed(0)}% humidity) at $tempDetail. Brief ventilation can help, but avoid prolonged window opening.";
     }
 
     // Moderate conditions
     if (airQualityLevel.toLowerCase() == 'good' && tempCelsius >= 15 && tempCelsius <= 28) {
-      return "Moderate conditions for ventilation. Consider opening windows based on your comfort preferences.";
+      String windDetail = formatWindSpeed(windSpeed, isCelsius);
+      String tempDetail = formatTemperature(temperature, isCelsius);
+      String windDirName = getWindDirectionName(windDirection);
+      
+      return "Moderate conditions for ventilation. Current: $tempDetail, wind $windDetail from the $windDirName. Consider opening windows based on your comfort preferences.";
     }
 
     // Default fallback
@@ -380,7 +400,7 @@ class EasyFlowScoreModel {
   }
 
   // Get optimal windows to open based on wind direction and home orientation
-  List<String> _getOptimalWindows() {
+  List<String> getOptimalWindows() {
     // Cross-ventilation is best when wind is perpendicular to home orientation
     Map<String, Map<String, List<String>>> crossVentilationMap = {
       'N': {
@@ -437,7 +457,7 @@ class EasyFlowScoreModel {
   }
 
   // Convert wind direction abbreviation to readable name
-  String _getWindDirectionName(String direction) {
+  String getWindDirectionName(String direction) {
     Map<String, String> directionNames = {
       'N': 'North',
       'NE': 'Northeast', 
@@ -449,5 +469,26 @@ class EasyFlowScoreModel {
       'NW': 'Northwest',
     };
     return directionNames[direction] ?? direction;
+  }
+
+  // Format wind speed for display
+  String formatWindSpeed(double windSpeed, bool isCelsius) {
+    if (isCelsius) {
+      // Metric units: convert m/s to km/h for display
+      final kmh = windSpeed * 3.6;
+      return '${kmh.toStringAsFixed(1)} km/h';
+    } else {
+      // Imperial units: wind speed is already in mph
+      return '${windSpeed.toStringAsFixed(1)} mph';
+    }
+  }
+
+  // Format temperature for display
+  String formatTemperature(double temperature, bool isCelsius) {
+    if (isCelsius) {
+      return '${temperature.toStringAsFixed(1)}°C';
+    } else {
+      return '${temperature.toStringAsFixed(1)}°F';
+    }
   }
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'dart:math' as math;
 import '../models/easy_flow_score_model.dart';
+import '../providers/smart_home_provider.dart';
 
 class EasyFlowScoreCard extends StatefulWidget {
   final EasyFlowScoreModel? scoreModel;
@@ -26,65 +28,78 @@ class _EasyFlowScoreCardState extends State<EasyFlowScoreCard> {
     final statusMessage = model.getSmartStatusMessage(); // Use smart messaging
     final ventilationHint = model.generateVentilationHint();
     
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Card(
-        elevation: 8,
-        color: Colors.white,
-        surfaceTintColor: Colors.white,
-        shadowColor: Colors.black.withOpacity(0.1),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-      child: Stack(
-        children: [
-          // Info icon button in top-right corner
-          Positioned(
-            top: 0,
-            right: 0,
-            child: InkWell(
-              onTap: () => _showInfoDialog(context),
+    return Consumer<SmartHomeProvider>(
+      builder: (context, smartHomeProvider, child) {
+        return Container(
+          width: double.infinity,
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Card(
+            elevation: 8,
+            color: Colors.white,
+            surfaceTintColor: Colors.white,
+            shadowColor: Colors.black.withOpacity(0.1),
+            shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
-              child: Padding(
-                padding: const EdgeInsets.all(4.0),
-                child: Icon(
-                  Icons.info_outline,
-                  size: 20,
-                  color: Colors.grey[600],
-                ),
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              child: Stack(
+                children: [
+                  // Info icon button in top-right corner
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: InkWell(
+                      onTap: () => _showInfoDialog(context),
+                      borderRadius: BorderRadius.circular(20),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: Icon(
+                          Icons.info_outline,
+                          size: 20,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Main content
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Large Score Display
+                      _buildScoreDisplay(score),
+                      
+                      const SizedBox(height: 16),
+                      
+                      // Dynamic Status Message
+                      _buildStatusMessage(statusMessage, score),
+                      
+                      const SizedBox(height: 20),
+                      
+                      // Personalized Ventilation Advice
+                      _buildVentilationAdvice(ventilationHint, score),
+                      
+                      const SizedBox(height: 20),
+                      
+                      // Weather Data Grid
+                      _buildWeatherDataGrid(model),
+                      
+                      const SizedBox(height: 24),
+                      
+                      // AC Control Section
+                      Consumer<SmartHomeProvider>(
+                        builder: (context, smartHomeProvider, child) {
+                          return _buildACControlSection(context, smartHomeProvider, score);
+                        },
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
-          // Main content
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Large Score Display
-              _buildScoreDisplay(score),
-              
-              const SizedBox(height: 16),
-              
-              // Dynamic Status Message
-              _buildStatusMessage(statusMessage, score),
-              
-              const SizedBox(height: 20),
-              
-              // Personalized Ventilation Advice
-              _buildVentilationAdvice(ventilationHint, score),
-              
-              const SizedBox(height: 24),
-              
-              // Weather Data Grid
-              _buildWeatherDataGrid(model),
-            ],
-          ),
-        ],
-      ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -600,5 +615,241 @@ class _EasyFlowScoreCardState extends State<EasyFlowScoreCard> {
       // Imperial units: wind speed is already in mph
       return '${windSpeed.toStringAsFixed(0)} mph';
     }
+  }
+
+  Widget _buildACControlSection(BuildContext context, SmartHomeProvider smartHomeProvider, int score) {
+    // Only show AC controls if conditions warrant it
+    bool shouldShowTurnOnAC = score < 40; // Low score suggests AC might be needed
+    bool shouldShowTurnOffAC = score >= 70; // High score suggests windows should be open instead
+    
+    if (!shouldShowTurnOnAC && !shouldShowTurnOffAC) {
+      return const SizedBox.shrink(); // Don't show any AC controls
+    }
+    
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.ac_unit,
+                color: Colors.blue[600],
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Smart AC Control',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              if (shouldShowTurnOnAC) ...[
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: smartHomeProvider.isLoading 
+                      ? null 
+                      : () => _handleTurnOnAC(context, smartHomeProvider),
+                    icon: Icon(
+                      Icons.power_settings_new,
+                      size: 18,
+                      color: smartHomeProvider.isLoading ? Colors.grey : Colors.white,
+                    ),
+                    label: Text(
+                      smartHomeProvider.isLoading ? 'Turning On...' : 'Turn On AC',
+                      style: TextStyle(
+                        color: smartHomeProvider.isLoading ? Colors.grey : Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: smartHomeProvider.isLoading ? Colors.grey[300] : Colors.blue[600],
+                      foregroundColor: Colors.white,
+                      elevation: 2,
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+              if (shouldShowTurnOffAC) ...[
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: smartHomeProvider.isLoading 
+                      ? null 
+                      : () => _handleTurnOffAC(context, smartHomeProvider),
+                    icon: Icon(
+                      Icons.power_off,
+                      size: 18,
+                      color: smartHomeProvider.isLoading ? Colors.grey : Colors.white,
+                    ),
+                    label: Text(
+                      smartHomeProvider.isLoading ? 'Turning Off...' : 'Turn Off AC',
+                      style: TextStyle(
+                        color: smartHomeProvider.isLoading ? Colors.grey : Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: smartHomeProvider.isLoading ? Colors.grey[300] : Colors.green[600],
+                      foregroundColor: Colors.white,
+                      elevation: 2,
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // AC Control Handler Functions
+  void _handleTurnOnAC(BuildContext context, SmartHomeProvider smartHomeProvider) async {
+    // Check if user has connected devices
+    if (!smartHomeProvider.hasConnectedProviders) {
+      _showConnectSmartHomeDialog(context, smartHomeProvider);
+      return;
+    }
+
+    if (!smartHomeProvider.hasAvailableDevices) {
+      _showSnackBar(context, 'No AC devices found. Please check your connected devices.', Colors.orange);
+      return;
+    }
+
+    // Turn on AC
+    final success = await smartHomeProvider.turnOnAC();
+    
+    if (success) {
+      _showSnackBar(context, '✅ AC turned on successfully!', Colors.green);
+    } else {
+      final error = smartHomeProvider.errorMessage ?? 'Failed to turn on AC';
+      _showSnackBar(context, '❌ $error', Colors.red);
+    }
+  }
+
+  void _handleTurnOffAC(BuildContext context, SmartHomeProvider smartHomeProvider) async {
+    // Check if user has connected devices
+    if (!smartHomeProvider.hasConnectedProviders) {
+      _showConnectSmartHomeDialog(context, smartHomeProvider);
+      return;
+    }
+
+    if (!smartHomeProvider.hasAvailableDevices) {
+      _showSnackBar(context, 'No AC devices found. Please check your connected devices.', Colors.orange);
+      return;
+    }
+
+    // Turn off AC
+    final success = await smartHomeProvider.turnOffAC();
+    
+    if (success) {
+      _showSnackBar(context, '✅ AC turned off successfully!', Colors.green);
+    } else {
+      final error = smartHomeProvider.errorMessage ?? 'Failed to turn off AC';
+      _showSnackBar(context, '❌ $error', Colors.red);
+    }
+  }
+
+  void _showConnectSmartHomeDialog(BuildContext context, SmartHomeProvider smartHomeProvider) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Connect Smart Home'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('To control your AC, you need to connect your smart home provider.'),
+            SizedBox(height: 12),
+            Text('Supported providers:'),
+            Text('• SmartThings'),
+            Text('• Google Home'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _showProviderSelectionDialog(context, smartHomeProvider);
+            },
+            child: const Text('Connect'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showProviderSelectionDialog(BuildContext context, SmartHomeProvider smartHomeProvider) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Select Provider'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.home),
+              title: const Text('SmartThings'),
+              subtitle: const Text('Samsung SmartThings Hub'),
+              onTap: () {
+                Navigator.of(context).pop();
+                smartHomeProvider.connectProvider(context, 'smartthings');
+                _showSnackBar(context, 'SmartThings connection initiated', Colors.blue);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.home_outlined),
+              title: const Text('Google Home'),
+              subtitle: const Text('Google Nest devices'),
+              onTap: () {
+                Navigator.of(context).pop();
+                smartHomeProvider.connectProvider(context, 'google');
+                _showSnackBar(context, 'Google Home connection initiated', Colors.blue);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showSnackBar(BuildContext context, String message, Color backgroundColor) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: backgroundColor,
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
   }
 }

@@ -155,13 +155,24 @@ class SmartTipsCard extends StatelessWidget {
                   color: Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text(
-                  '${tipsProvider.tips.indexOf(currentTip) + 1}/${tipsProvider.tips.length}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                    fontWeight: FontWeight.w500,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${tipsProvider.tips.indexOf(currentTip) + 1}/${tipsProvider.tips.length}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.swipe_left,
+                      size: 14,
+                      color: Colors.grey.shade500,
+                    ),
+                  ],
                 ),
               ),
           ],
@@ -170,46 +181,65 @@ class SmartTipsCard extends StatelessWidget {
         const SizedBox(height: 16),
         
         // Tip content (no expand/collapse functionality)
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              currentTip.headline,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade800,
-                height: 1.3,
-              ),
-              overflow: TextOverflow.visible,
-            ),
-            
-            const SizedBox(height: 8),
-            
-            Text(
-              currentTip.excerpt,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade600,
-                height: 1.4,
-              ),
-              overflow: TextOverflow.visible,
-            ),
-            
-            const SizedBox(height: 8),
-            
-            // Only show sponsor info if available
-            if (currentTip.sponsor != null && currentTip.sponsor!.isNotEmpty)
+        GestureDetector(
+          onHorizontalDragEnd: (details) {
+            // Only handle swipes if there are multiple tips
+            if (tipsProvider.tips.length > 1) {
+              // Swipe threshold
+              const double swipeThreshold = 100.0;
+              
+              if (details.primaryVelocity != null) {
+                if (details.primaryVelocity! > swipeThreshold) {
+                  // Swipe right - go to previous tip
+                  tipsProvider.previousTip();
+                } else if (details.primaryVelocity! < -swipeThreshold) {
+                  // Swipe left - go to next tip
+                  tipsProvider.nextTip();
+                }
+              }
+            }
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Text(
-                'Sponsored by ${currentTip.sponsor}',
+                currentTip.headline,
                 style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade500,
-                  fontStyle: FontStyle.italic,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade800,
+                  height: 1.3,
                 ),
-                overflow: TextOverflow.ellipsis,
+                overflow: TextOverflow.visible,
               ),
-          ],
+              
+              const SizedBox(height: 8),
+              
+              Text(
+                currentTip.excerpt,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade600,
+                  height: 1.4,
+                ),
+                overflow: TextOverflow.visible,
+              ),
+              
+              const SizedBox(height: 8),
+              
+              // Only show sponsor info if available
+              if (currentTip.sponsor != null && currentTip.sponsor!.isNotEmpty)
+                Text(
+                  'Sponsored by ${currentTip.sponsor}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade500,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+            ],
+          ),
         ),
       ],
     );
