@@ -2,8 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/quick_tips_provider.dart';
 
-class SmartTipsCard extends StatelessWidget {
+class SmartTipsCard extends StatefulWidget {
   const SmartTipsCard({super.key});
+
+  @override
+  State<SmartTipsCard> createState() => _SmartTipsCardState();
+}
+
+class _SmartTipsCardState extends State<SmartTipsCard> {
+  bool _expanded = false;
 
   @override
   Widget build(BuildContext context) {
@@ -169,47 +176,92 @@ class SmartTipsCard extends StatelessWidget {
         
         const SizedBox(height: 16),
         
-        // Tip content (no expand/collapse functionality)
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              currentTip.headline,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade800,
-                height: 1.3,
-              ),
-              overflow: TextOverflow.visible,
-            ),
-            
-            const SizedBox(height: 8),
-            
-            Text(
-              currentTip.excerpt,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade600,
-                height: 1.4,
-              ),
-              overflow: TextOverflow.visible,
-            ),
-            
-            const SizedBox(height: 8),
-            
-            // Only show sponsor info if available
-            if (currentTip.sponsor != null && currentTip.sponsor!.isNotEmpty)
-              Text(
-                'Sponsored by ${currentTip.sponsor}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade500,
-                  fontStyle: FontStyle.italic,
+        // Tip content
+        GestureDetector(
+          onTap: () {
+            setState(() {
+              _expanded = !_expanded;
+            });
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Flexible(
+                child: Text(
+                  currentTip.headline,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade800,
+                    height: 1.3,
+                  ),
+                  overflow: TextOverflow.visible,
                 ),
-                overflow: TextOverflow.ellipsis,
               ),
-          ],
+              
+              const SizedBox(height: 8),
+              
+              AnimatedCrossFade(
+                duration: const Duration(milliseconds: 300),
+                crossFadeState: _expanded 
+                    ? CrossFadeState.showSecond 
+                    : CrossFadeState.showFirst,
+                firstChild: Text(
+                  currentTip.excerpt.length > 100 
+                      ? '${currentTip.excerpt.substring(0, 100)}...'
+                      : currentTip.excerpt,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                    height: 1.4,
+                  ),
+                  overflow: TextOverflow.visible,
+                ),
+                secondChild: Text(
+                  currentTip.excerpt,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                    height: 1.4,
+                  ),
+                  overflow: TextOverflow.visible,
+                ),
+              ),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 8),
+              
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  if (currentTip.sponsor != null && currentTip.sponsor!.isNotEmpty)
+                    Text(
+                      'Sponsored by ${currentTip.sponsor}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade500,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  const Spacer(),
+                  Text(
+                    _expanded ? 'Tap to collapse' : 'Tap to expand',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.blue.shade600,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ],
     );

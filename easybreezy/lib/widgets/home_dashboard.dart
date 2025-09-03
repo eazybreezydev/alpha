@@ -255,10 +255,8 @@ class HomeDashboard extends StatelessWidget {
                                 ),
                               ),
                             if (weatherData != null) const SizedBox(height: 24),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              child: SmartTipsCard(),
-                            ),
+                            // Smart Tips Card (no external padding to fix overflow)
+                            SmartTipsCard(),
                             const SizedBox(height: 24),
                           ],
                         ),

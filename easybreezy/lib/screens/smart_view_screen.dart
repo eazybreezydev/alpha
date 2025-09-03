@@ -12,8 +12,21 @@ import '../models/smart_thermostat_model.dart';
 import '../models/predictive_recommendation_model.dart';
 import '../models/carbon_footprint_model.dart';
 
+/// Smart View Screen with configurable inactive widget overlays
+/// 
+/// TESTING TOGGLES:
+/// - Set `_showInactiveOverlays` to false to remove all overlays for testing
+/// - Set `_isThermostatConnected` to true to simulate connected thermostat
+/// 
+/// This creates semi-transparent overlays on widgets 2-5 when thermostat is not connected
 class SmartViewScreen extends StatelessWidget {
   const SmartViewScreen({Key? key}) : super(key: key);
+
+  // 🔧 TESTING TOGGLE: Set to false to remove inactive overlays for testing
+  static const bool _showInactiveOverlays = true;
+  
+  // Mock thermostat connection status (in real app this would come from provider/state)
+  static const bool _isThermostatConnected = false;
 
   /// Determines if it's currently day time (6 AM to 6 PM)
   bool _isDayTime() {
@@ -27,6 +40,53 @@ class SmartViewScreen extends StatelessWidget {
     return _isDayTime() 
         ? 'assets/images/backgrounds/dayv2.png'
         : 'assets/images/backgrounds/night.png';
+  }
+
+  /// Creates a widget with an inactive overlay if thermostat is not connected
+  Widget _buildInactiveWidget({
+    required Widget child,
+    required BuildContext context,
+  }) {
+    if (!_showInactiveOverlays || _isThermostatConnected) {
+      return child;
+    }
+
+    return Stack(
+      children: [
+        child,
+        // Semi-transparent overlay
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.grey.withOpacity(0.7),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.lock_outline,
+                    size: 32,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Connect Thermostat\nto Activate',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -183,34 +243,77 @@ class SmartViewScreen extends StatelessWidget {
                         ),
                       ),
 
-                      // Smart Energy Advisor Card
+                      const SizedBox(height: 24),
+                      
+                      // Thermostat Control Card (Widget 2 - with inactive overlay)
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: SmartEnergyAdvisorCard(
-                          thermostatData: SmartThermostatModel.mock(),
-                          onApplyNow: () {
-                            // Show a snackbar for demo purposes
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Text('Thermostat settings would be applied in a real app!'),
-                                backgroundColor: Colors.green.shade600,
-                                action: SnackBarAction(
-                                  label: 'OK',
-                                  textColor: Colors.white,
-                                  onPressed: () {},
+                        child: _buildInactiveWidget(
+                          context: context,
+                          child: ThermostatControlCard(
+                            thermostatName: 'Living Room Thermostat',
+                            currentTemperature: 72.0,
+                            targetTemperature: 70.0,
+                            currentMode: ThermostatMode.cooling,
+                            onTargetTemperatureChanged: (temperature) {
+                              // Handle target temperature change
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Target temperature set to ${temperature.toStringAsFixed(0)}°F'),
+                                  backgroundColor: Colors.blue.shade600,
+                                  duration: const Duration(seconds: 2),
                                 ),
-                              ),
-                            );
-                          },
+                              );
+                            },
+                            onModeChanged: (mode) {
+                              // Handle mode change
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Thermostat mode changed to ${mode.displayName}'),
+                                  backgroundColor: Colors.green.shade600,
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Smart Energy Advisor Card (Widget 3 - with inactive overlay)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: _buildInactiveWidget(
+                          context: context,
+                          child: SmartEnergyAdvisorCard(
+                            thermostatData: SmartThermostatModel.mock(),
+                            onApplyNow: () {
+                              // Show a snackbar for demo purposes
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text('Thermostat settings would be applied in a real app!'),
+                                  backgroundColor: Colors.green.shade600,
+                                  action: SnackBarAction(
+                                    label: 'OK',
+                                    textColor: Colors.white,
+                                    onPressed: () {},
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ),
                       const SizedBox(height: 24), // Add spacing after Energy Advisor Card
 
-                      // Carbon Footprint Tracking Widget
+                      // Carbon Footprint Tracking Widget (Widget 4 - with inactive overlay)
                       if (weatherData != null)
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: CarbonFootprintWidget(
+                          child: _buildInactiveWidget(
+                            context: context,
+                            child: CarbonFootprintWidget(
                             carbonData: CarbonFootprintModel.fromWeatherData(
                               weatherData: weatherData,
                               isCelsius: isCelsius,
@@ -291,62 +394,35 @@ class SmartViewScreen extends StatelessWidget {
                             },
                           ),
                         ),
+                      ),
                       if (weatherData != null) const SizedBox(height: 24),
 
-                      // Predictive Window Recommendations Widget (DEMO)
+                      // Predictive Window Recommendations Widget (Widget 5 - with inactive overlay)
                       if (weatherData != null && weatherProvider.forecast != null)
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: PredictiveWindowRecommendationsWidget(
-                            predictions: PredictiveRecommendationModel.fromForecast(
-                              forecastData: weatherProvider.forecast!.hourlyForecast,
-                              homeOrientation: homeConfig?.orientation.toString().split('.').last ?? 'North',
-                              isCelsius: isCelsius,
+                          child: _buildInactiveWidget(
+                            context: context,
+                            child: PredictiveWindowRecommendationsWidget(
+                              predictions: PredictiveRecommendationModel.fromForecast(
+                                forecastData: weatherProvider.forecast!.hourlyForecast,
+                                homeOrientation: homeConfig?.orientation.toString().split('.').last ?? 'North',
+                                isCelsius: isCelsius,
+                              ),
+                              onNotificationTapped: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Notification settings coming soon!'),
+                                    backgroundColor: Colors.blue,
+                                  ),
+                                );
+                              },
                             ),
-                            onNotificationTapped: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Notification settings coming soon!'),
-                                  backgroundColor: Colors.blue,
-                                ),
-                              );
-                            },
                           ),
                         ),
                       if (weatherData != null && weatherProvider.forecast != null) const SizedBox(height: 24),
-
-                      // Thermostat Control Card
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: ThermostatControlCard(
-                          thermostatName: 'Living Room Thermostat',
-                          currentTemperature: 72.0,
-                          targetTemperature: 70.0,
-                          currentMode: ThermostatMode.cooling,
-                          onTargetTemperatureChanged: (temperature) {
-                            // Handle target temperature change
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Target temperature set to ${temperature.toStringAsFixed(0)}°F'),
-                                backgroundColor: Colors.blue.shade600,
-                                duration: const Duration(seconds: 2),
-                              ),
-                            );
-                          },
-                          onModeChanged: (mode) {
-                            // Handle mode change
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Thermostat mode changed to ${mode.displayName}'),
-                                backgroundColor: Colors.green.shade600,
-                                duration: const Duration(seconds: 2),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      // ...other widgets from your old home screen...
+                      
+                      // End of widgets
                     ],
                   ),
                 ),
