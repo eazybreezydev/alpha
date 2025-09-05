@@ -37,6 +37,7 @@ flutter:
   assets:
     - assets/images/
     - assets/images/backgrounds/
+    - assets/images/ConnectLogos/
     - assets/images/window-installers-placehold.jpg
   fonts:
     - family: Poppins

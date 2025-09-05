@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/floating_menu_bar.dart';
 
 class ConnectSmartThermostatPage extends StatelessWidget {
   const ConnectSmartThermostatPage({Key? key}) : super(key: key);
@@ -7,22 +8,22 @@ class ConnectSmartThermostatPage extends StatelessWidget {
   static const List<Map<String, String>> supportedProviders = [
     {
       'name': 'Google Nest',
-      'logo': 'assets/images/thermostat_logos/nest_logo.png',
+      'logo': 'assets/images/ConnectLogos/GoogleNest.png',
       'description': 'Connect your Nest Learning Thermostat'
     },
     {
       'name': 'Ecobee',
-      'logo': 'assets/images/thermostat_logos/ecobee_logo.png',
+      'logo': 'assets/images/ConnectLogos/EcoBee.png',
       'description': 'Connect your Ecobee Smart Thermostat'
     },
     {
       'name': 'Honeywell',
-      'logo': 'assets/images/thermostat_logos/honeywell_logo.png',
+      'logo': 'assets/images/ConnectLogos/HoneyWell.png',
       'description': 'Connect your Honeywell Home Thermostat'
     },
     {
       'name': 'SmartThings',
-      'logo': 'assets/images/thermostat_logos/smartthings_logo.png',
+      'logo': 'assets/images/ConnectLogos/SmartThings.png',
       'description': 'Connect via Samsung SmartThings'
     },
   ];
@@ -44,11 +45,19 @@ class ConnectSmartThermostatPage extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
+      body: Stack(
+        children: [
+          // Main content
+          SingleChildScrollView(
+            padding: const EdgeInsets.only(
+              left: 24.0,
+              right: 24.0,
+              top: 24.0,
+              bottom: 120.0, // Extra bottom padding for floating menu
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
             const SizedBox(height: 32),
             
             // Top section: Thermostat illustration
@@ -147,8 +156,18 @@ class ConnectSmartThermostatPage extends StatelessWidget {
             const SizedBox(height: 32),
           ],
         ),
+      ), // Close SingleChildScrollView
+      // Floating Menu Bar
+      FloatingMenuBar(
+        selectedIndex: -1, // No tab selected since this is a separate page
+        onTap: (index) {
+          // Navigate back to the main app with the selected tab
+          Navigator.of(context).pop(); // Close current page first
+        },
       ),
-    );
+    ], // Close Stack children
+  ), // Close Stack (body)
+); // Close Scaffold
   }
 
   Widget _buildProviderCard(BuildContext context, Map<String, String> provider) {
@@ -164,18 +183,37 @@ class ConnectSmartThermostatPage extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           child: Row(
             children: [
-              // Provider logo placeholder (using icon for now)
+              // Provider logo
               Container(
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF43B3AE).withOpacity(0.1),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade200, width: 1),
                 ),
-                child: const Icon(
-                  Icons.thermostat_outlined,
-                  size: 24,
-                  color: Color(0xFF43B3AE),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(11),
+                  child: Image.asset(
+                    provider['logo']!,
+                    width: 48,
+                    height: 48,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      // Fallback to thermostat icon if image fails to load
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF43B3AE).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(11),
+                        ),
+                        child: const Icon(
+                          Icons.thermostat_outlined,
+                          size: 24,
+                          color: Color(0xFF43B3AE),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
               

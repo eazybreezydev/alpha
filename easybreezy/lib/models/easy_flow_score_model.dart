@@ -300,6 +300,13 @@ class EasyFlowScoreModel {
       String windDirectionName = getWindDirectionName(windDirection);
       return "It's too windy to open windows. Strong gusts from the $windDirectionName may cause discomfort or drafts.";
     }
+    
+    // Check for moderately windy conditions (matches getSmartStatusMessage threshold)
+    if (windSpeedKmh > 25) { // ~15.5 mph - matches the "too windy" threshold in getSmartStatusMessage
+      String windDetail = formatWindSpeed(windSpeed, isCelsius);
+      String windDirectionName = getWindDirectionName(windDirection);
+      return "It's quite windy outside ($windDetail from the $windDirectionName). Consider keeping windows closed to avoid drafts and maintain comfort.";
+    }
 
     // Check temperature conditions (using Celsius thresholds)
     if (tempCelsius < 14) {
@@ -347,7 +354,7 @@ class EasyFlowScoreModel {
 
     // Check for good but not perfect conditions
     if (airQualityLevel.toLowerCase() == 'good' && 
-        windSpeedKmh >= 5 && windSpeedKmh <= 32 && // ~3-20 mph converted to km/h
+        windSpeedKmh >= 5 && windSpeedKmh <= 25 && // Changed from 32 to 25 to match getSmartStatusMessage threshold
         tempCelsius >= 16 && tempCelsius <= 27) {
       
       List<String> recommendedWindows = getOptimalWindows();
