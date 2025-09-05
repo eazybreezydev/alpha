@@ -19,7 +19,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final int _totalPages = 3;
   
   // Home configuration stored during onboarding
-  HomeOrientation _selectedOrientation = HomeOrientation.north;
+  HomeOrientation? _selectedOrientation;
   final Map<WindowDirection, bool> _selectedWindows = {
     WindowDirection.north: false,
     WindowDirection.east: false,
@@ -50,6 +50,43 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _nextPage() {
+    // Validation for the Home Orientation page (page index 1)
+    if (_currentPage == 1) {
+      bool canProceed = true;
+      String errorMessage = '';
+      
+      // Check if address is filled
+      if (_address.trim().isEmpty) {
+        canProceed = false;
+        errorMessage = 'Please enter your home address';
+      }
+      // Check if orientation is selected (this check will happen even if address is empty)
+      else if (_selectedOrientation == null) {
+        canProceed = false;
+        errorMessage = 'Please select which direction your home faces';
+      }
+      
+      if (!canProceed) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.warning, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(child: Text(errorMessage)),
+              ],
+            ),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        );
+        return; // Don't proceed to next page
+      }
+    }
+    
     if (_currentPage < _totalPages - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
@@ -95,6 +132,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 children: [
+                  // Required fields note (only show on page 1 - home orientation)
+                  if (_currentPage == 1)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.info_outline, 
+                               size: 16, 
+                               color: Colors.grey[600]),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Fields marked with * are required',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   if (_currentPage > 0)
                     TextButton(
                       onPressed: () {
@@ -129,11 +188,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Widget _buildWelcomePage() {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          const SizedBox(height: 20), // Add some top spacing
           const Text(
             'Welcome to EasyBreezy',
             textAlign: TextAlign.center,
@@ -143,14 +203,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               color: Colors.black,
             ),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24), // Reduced from 32
           Image.asset(
             'assets/images/housev2.png',
-            width: 325,
-            height: 325,
+            width: 280, // Reduced from 325
+            height: 280, // Reduced from 325
             fit: BoxFit.contain,
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24), // Reduced from 32
           const Text(
             'Save energy and enjoy fresh air by knowing exactly when to open your windows.',
             textAlign: TextAlign.center,
@@ -159,7 +219,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               color: Colors.black,
             ),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24), // Reduced from 32
           const Text(
             'To keep your Home Comfortable and Energy efficient we\'ll need to know a bit about your home to provide accurate recommendations.',
             textAlign: TextAlign.center,
@@ -168,6 +228,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               color: Colors.black,
             ),
           ),
+          const SizedBox(height: 20), // Add some bottom spacing
         ],
       ),
     );
@@ -200,13 +261,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Home Address',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
+                  const Row(
+                    children: [
+                      Text(
+                        'Home Address',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      Text(
+                        ' *',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -337,13 +410,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Which direction does your home face?',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Which direction does your home face?',
+                          style: TextStyle(
+                            fontSize: 20, // Reduced from 22
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        ' *',
+                        style: TextStyle(
+                          fontSize: 20, // Reduced from 22
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -836,7 +923,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _completeOnboarding() {
     // Save configuration and complete onboarding
     final homeProvider = Provider.of<HomeProvider>(context, listen: false);
-    homeProvider.updateHomeOrientation(_selectedOrientation);
+    homeProvider.updateHomeOrientation(_selectedOrientation!); // Safe to use ! since we validated it exists
     
     // Assume all sides have windows since we removed the selection
     final allWindows = {
@@ -880,7 +967,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
 // Orientation Picker widget - Compass Style Layout
 class _OrientationPicker extends StatelessWidget {
-  final HomeOrientation selected;
+  final HomeOrientation? selected;
   final ValueChanged<HomeOrientation> onChanged;
   const _OrientationPicker({required this.selected, required this.onChanged});
 

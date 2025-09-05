@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'dart:math' as math;
 import '../models/easy_flow_score_model.dart';
 import '../providers/smart_home_provider.dart';
+import '../screens/connect_smart_thermostat_page.dart';
 
 class EasyFlowScoreCard extends StatefulWidget {
   final EasyFlowScoreModel? scoreModel;
@@ -618,10 +619,82 @@ class _EasyFlowScoreCardState extends State<EasyFlowScoreCard> {
   }
 
   Widget _buildACControlSection(BuildContext context, SmartHomeProvider smartHomeProvider, int score) {
-    // Only show AC controls if conditions warrant it
+    // Check if user has connected smart devices
+    bool hasConnectedDevices = smartHomeProvider.hasConnectedProviders && smartHomeProvider.hasAvailableDevices;
+    
+    // Only show AC controls if conditions warrant it or if no devices are connected
     bool shouldShowTurnOnAC = score < 40; // Low score suggests AC might be needed
     bool shouldShowTurnOffAC = score >= 70; // High score suggests windows should be open instead
     
+    // If no devices connected, show connect button when AC controls would be relevant
+    if (!hasConnectedDevices && (shouldShowTurnOnAC || shouldShowTurnOffAC)) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.blue[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.blue[200]!, width: 1),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.thermostat,
+                  color: Colors.blue[600],
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Smart Climate Control',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const ConnectSmartThermostatPage(),
+                  ),
+                );
+              },
+              icon: Icon(
+                Icons.add_link,
+                size: 18,
+                color: Colors.white,
+              ),
+              label: Text(
+                'Connect Your Thermostat',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue[600],
+                foregroundColor: Colors.white,
+                elevation: 2,
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                minimumSize: const Size(double.infinity, 44),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    // If connected but no AC controls needed, don't show anything
     if (!shouldShowTurnOnAC && !shouldShowTurnOffAC) {
       return const SizedBox.shrink(); // Don't show any AC controls
     }
