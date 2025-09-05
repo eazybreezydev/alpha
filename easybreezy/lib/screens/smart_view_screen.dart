@@ -23,7 +23,7 @@ class SmartViewScreen extends StatelessWidget {
   const SmartViewScreen({Key? key}) : super(key: key);
 
   // 🔧 TESTING TOGGLE: Set to false to remove inactive overlays for testing
-  static const bool _showInactiveOverlays = true;
+  static const bool _showInactiveOverlays = false;
   
   // Mock thermostat connection status (in real app this would come from provider/state)
   static const bool _isThermostatConnected = false;
