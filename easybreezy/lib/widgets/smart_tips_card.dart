@@ -11,7 +11,7 @@ class SmartTipsCard extends StatelessWidget {
       builder: (context, tipsProvider, child) {
         return Container(
           width: double.infinity,
-          margin: const EdgeInsets.symmetric(horizontal: 8), // Controlled margin
+          margin: const EdgeInsets.symmetric(horizontal: 16), // Match other widgets' margins
           child: Card(
             elevation: 8,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -232,8 +232,8 @@ class SmartTipsCard extends StatelessWidget {
                 Text(
                   'Sponsored by ${currentTip.sponsor}',
                   style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade500,
+                    fontSize: 14, // Increased from 12 to 14 for better readability
+                    color: Colors.grey.shade800, // Much darker for better visibility
                     fontStyle: FontStyle.italic,
                   ),
                   overflow: TextOverflow.ellipsis,

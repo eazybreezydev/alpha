@@ -179,7 +179,7 @@ class ConnectSmartThermostatPage extends StatelessWidget {
                 ),
               ),
               
-              const SizedBox(width: 16),
+              const SizedBox(width: 8), // Further reduced to give more space for text
               
               // Provider info
               Expanded(
@@ -193,6 +193,8 @@ class ConnectSmartThermostatPage extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF2C3E50),
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -206,7 +208,7 @@ class ConnectSmartThermostatPage extends StatelessWidget {
                 ),
               ),
               
-              const SizedBox(width: 16),
+              const SizedBox(width: 8), // Reduced spacing before button
               
               // Connect button
               ElevatedButton.icon(
@@ -216,7 +218,7 @@ class ConnectSmartThermostatPage extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF43B3AE),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), // Reduced horizontal padding
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),

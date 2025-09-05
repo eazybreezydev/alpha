@@ -626,8 +626,8 @@ class _EasyFlowScoreCardState extends State<EasyFlowScoreCard> {
     bool shouldShowTurnOnAC = score < 40; // Low score suggests AC might be needed
     bool shouldShowTurnOffAC = score >= 70; // High score suggests windows should be open instead
     
-    // If no devices connected, show connect button when AC controls would be relevant
-    if (!hasConnectedDevices && (shouldShowTurnOnAC || shouldShowTurnOffAC)) {
+    // Always show connect button when no devices are connected
+    if (!hasConnectedDevices) {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.all(16),
@@ -658,7 +658,7 @@ class _EasyFlowScoreCardState extends State<EasyFlowScoreCard> {
               ],
             ),
             const SizedBox(height: 12),
-            ElevatedButton.icon(
+            ElevatedButton(
               onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
@@ -666,12 +666,7 @@ class _EasyFlowScoreCardState extends State<EasyFlowScoreCard> {
                   ),
                 );
               },
-              icon: Icon(
-                Icons.add_link,
-                size: 18,
-                color: Colors.white,
-              ),
-              label: Text(
+              child: Text(
                 'Connect Your Thermostat',
                 style: TextStyle(
                   color: Colors.white,
