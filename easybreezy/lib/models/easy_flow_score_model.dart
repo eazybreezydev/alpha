@@ -87,19 +87,25 @@ class EasyFlowScoreModel {
       score = (score * 0.6).round(); // Reduce score by 40% for poor conditions
     }
 
-    // Air quality scoring
+    // Air quality scoring - updated for OpenWeatherMap Air Pollution API categories
     switch (airQualityLevel.toLowerCase()) {
       case 'good':
         score += 15;
         break;
-      case 'moderate':
-        score += 10;
+      case 'fair':
+        score += 12;
         break;
-      case 'unhealthy for sensitive groups':
-        score += 5;
+      case 'moderate':
+        score += 8;
+        break;
+      case 'poor':
+        score += 3;
+        break;
+      case 'very poor':
+        score += 0;
         break;
       default:
-        score += 0; // Poor air quality
+        score += 0; // Unknown air quality
     }
 
     // Humidity scoring (30% - 60% is ideal)
@@ -171,7 +177,7 @@ class EasyFlowScoreModel {
     }
     
     // Check for specific poor conditions first (override score-based messaging)
-    if (airQualityLevel.toLowerCase() != 'good') {
+    if (airQualityLevel.toLowerCase() != 'good' && airQualityLevel.toLowerCase() != 'fair') {
       return "Keep windows closed - poor air quality";
     } else if (tempCelsius > 26.1) { // Same as RecommendationCard hot threshold
       return "Keep windows closed - too hot outside";
@@ -220,7 +226,7 @@ class EasyFlowScoreModel {
     }
     
     // Priority-based smart messaging - check for deal-breaker conditions first
-    if (airQualityLevel.toLowerCase() != 'good') {
+    if (airQualityLevel.toLowerCase() == 'poor' || airQualityLevel.toLowerCase() == 'very poor') {
       return "Air quality concerns ($airQualityLevel) - keep closed";
     } else if (tempCelsius > 26.1) { // Same as RecommendationCard threshold
       String tempDetail = formatTemperature(temperature, isCelsius);
@@ -284,14 +290,11 @@ class EasyFlowScoreModel {
 
     // Check air quality first (highest priority)
     if (airQualityLevel.toLowerCase() == 'poor' || 
-        airQualityLevel.toLowerCase() == 'unhealthy' ||
-        airQualityLevel.toLowerCase() == 'very unhealthy' ||
-        airQualityLevel.toLowerCase() == 'hazardous') {
+        airQualityLevel.toLowerCase() == 'very poor') {
       return "Air quality is currently not ideal. We recommend keeping windows closed to maintain indoor air quality.";
     }
     
-    if (airQualityLevel.toLowerCase() == 'moderate' || 
-        airQualityLevel.toLowerCase() == 'unhealthy for sensitive groups') {
+    if (airQualityLevel.toLowerCase() == 'moderate') {
       return "Air quality is moderate. Consider keeping windows closed if you have respiratory sensitivities.";
     }
 
@@ -400,6 +403,21 @@ class EasyFlowScoreModel {
       String windDirName = getWindDirectionName(windDirection);
       
       return "Moderate conditions for ventilation. Current: $tempDetail, wind $windDetail from the $windDirName. Consider opening windows based on your comfort preferences.";
+    }
+
+    // Cool weather conditions (10°C to 15°C)
+    if (airQualityLevel.toLowerCase() == 'good' && tempCelsius >= 10 && tempCelsius < 15) {
+      String windDetail = formatWindSpeed(windSpeed, isCelsius);
+      String tempDetail = formatTemperature(temperature, isCelsius);
+      
+      return "Cool conditions today ($tempDetail). Brief ventilation periods can help refresh indoor air, but consider limiting window opening time to avoid overcooling your home.";
+    }
+
+    // Cold weather conditions (below 10°C)
+    if (airQualityLevel.toLowerCase() == 'good' && tempCelsius < 10) {
+      String tempDetail = formatTemperature(temperature, isCelsius);
+      
+      return "It's quite cold outside ($tempDetail). Consider very brief ventilation periods only if needed, as extended window opening will significantly cool your home.";
     }
 
     // Default fallback

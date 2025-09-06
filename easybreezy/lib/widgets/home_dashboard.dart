@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'dart:async';
 import '../providers/weather_provider.dart';
 import '../providers/home_provider.dart';
+import '../providers/location_provider.dart';
 import '../widgets/smart_tips_card.dart'; // Import SmartTipsCard
 import '../widgets/local_ads_widget.dart'; // Import LocalAdsWidget
 import '../widgets/easy_flow_score_card.dart'; // Import EasyFlowScoreCard
@@ -10,8 +11,10 @@ import '../widgets/wind_forecast_chart.dart'; // Import WindForecastChart
 import '../widgets/wind_level_card.dart'; // Import WindLevelCard
 import '../widgets/wind_flow_animation.dart'; // Import new wind flow system
 import '../widgets/energy_estimation_widget.dart'; // Import EnergyEstimationWidget
+import '../widgets/simple_location_display.dart'; // Import SimpleLocationDisplay
 import '../models/easy_flow_score_model.dart'; // Import EasyFlowScoreModel
 import '../models/energy_estimation_model.dart'; // Import EnergyEstimationModel
+import '../models/air_quality_data.dart'; // Import AirQualityData
 
 class HomeDashboard extends StatelessWidget {
   const HomeDashboard({Key? key}) : super(key: key);
@@ -45,10 +48,16 @@ class HomeDashboard extends StatelessWidget {
         final windSpeed = weatherData?.windSpeed ?? 0;
         final windDirection = weatherData?.windDirection ?? '--';
         final temperature = weatherData?.temperature ?? 0;
-        // TODO: Replace with real AQI and pollen data
-        final aqiLevel = 'Good';
+        
+        // Get real air quality data from weather provider
+        final airQuality = weatherProvider.airQuality;
+        final aqiLevel = airQuality?.category ?? 'Unknown';
+        final aqiColor = airQuality != null 
+            ? Color(AirQualityData.getAqiColor(airQuality.aqi))
+            : Colors.grey;
+        
+        // TODO: Replace with real pollen data
         final pollenLevel = 'Low';
-        final aqiColor = Colors.green;
         final pollenColor = Colors.green;
 
         return Scaffold(
@@ -76,43 +85,18 @@ class HomeDashboard extends StatelessWidget {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Icon(Icons.location_on, color: _getTextColor()),
-                                const SizedBox(width: 8),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Consumer<WeatherProvider>(
-                                      builder: (context, weatherProvider, _) {
-                                        final city = weatherProvider.city ?? 'Unknown';
-                                        final province = weatherProvider.province ?? '';
-                                        final locationText = province.isNotEmpty ? '$city, $province' : city;
-                                        return Text(
-                                          locationText,
-                                          style: TextStyle(
-                                            color: _getTextColor(),
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                            shadows: _isDayTime() ? [] : [
-                                              const Shadow(
-                                                offset: Offset(1.0, 1.0),
-                                                blurRadius: 3.0,
-                                                color: Colors.black54,
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                    const SizedBox(height: 2),
-                                    _LiveTimestamp(textColor: _getTextColor()),
-                                  ],
-                                ),
+                                // Simple Location Display with dropdown functionality
+                                SimpleLocationDisplay(textColor: _getTextColor()),
+                                const SizedBox(height: 8),
+                                _LiveTimestamp(textColor: _getTextColor()),
                               ],
                             ),
+                            // Refresh button
                             IconButton(
-                              icon: Icon(Icons.my_location, color: _getTextColor()),
+                              icon: Icon(Icons.refresh, color: _getTextColor()),
                               onPressed: () => weatherProvider.refreshWeatherData(context),
                             ),
                           ],

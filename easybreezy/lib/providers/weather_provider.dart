@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../api/weather_service.dart';
 import '../models/weather_data.dart';
 import '../models/wind_data.dart';
+import '../models/air_quality_data.dart';
 import 'home_provider.dart';
 import '../utils/notification_service.dart';
 
@@ -14,9 +15,11 @@ class WeatherProvider extends ChangeNotifier {
   
   WeatherData? _currentWeather;
   WeatherForecast? _forecast;
+  AirQualityData? _airQuality;
   Position? _currentLocation;
   String? _city; // Added city property
   String? _province; // Add province/state property
+  String? _streetAddress; // Add street address property
   bool _isLoading = false;
   String? _error;
   List<Map<String, dynamic>> _alerts = [];
@@ -37,9 +40,11 @@ class WeatherProvider extends ChangeNotifier {
 
   WeatherData? get currentWeather => _currentWeather;
   WeatherForecast? get forecast => _forecast;
+  AirQualityData? get airQuality => _airQuality;
   Position? get currentLocation => _currentLocation;
   String? get city => _city; // City getter
   String? get province => _province; // Province getter
+  String? get streetAddress => _streetAddress; // Street address getter
   bool get isLoading => _isLoading;
   String? get error => _error;
   List<Map<String, dynamic>> get alerts => _alerts;
@@ -138,11 +143,16 @@ class WeatherProvider extends ChangeNotifier {
       try {
         final placemarks = await placemarkFromCoordinates(latitude, longitude);
         if (placemarks.isNotEmpty) {
-          _city = placemarks.first.locality ?? placemarks.first.subAdministrativeArea ?? placemarks.first.administrativeArea;
+          final placemark = placemarks.first;
+          _city = placemark.locality ?? placemark.subAdministrativeArea ?? placemark.administrativeArea;
+          
+          // Store street address if available
+          _streetAddress = placemark.street ?? placemark.name;
+          
           // Try to get the most descriptive province/state
-          final admin = placemarks.first.administrativeArea ?? '';
-          final subAdmin = placemarks.first.subAdministrativeArea ?? '';
-          final country = placemarks.first.country ?? '';
+          final admin = placemark.administrativeArea ?? '';
+          final subAdmin = placemark.subAdministrativeArea ?? '';
+          final country = placemark.country ?? '';
           // Prefer subAdmin if it's more descriptive than admin
           if (subAdmin.isNotEmpty && subAdmin != _city && subAdmin != country) {
             _province = subAdmin;
@@ -151,8 +161,9 @@ class WeatherProvider extends ChangeNotifier {
           } else {
             _province = admin.isNotEmpty ? admin : subAdmin;
           }
-          print('[WeatherProvider] Placemark: ${placemarks.first}');
+          print('[WeatherProvider] Placemark: $placemark');
           print('[WeatherProvider] Detected city/town: $_city, province/state: $_province');
+          print('[WeatherProvider] Street address: $_streetAddress');
           
           // Save location data for persistence
           await _saveLocationData();
@@ -161,6 +172,7 @@ class WeatherProvider extends ChangeNotifier {
         print('[WeatherProvider] Reverse geocoding failed: \\${geoErr.toString()}');
         _city = null;
         _province = null;
+        _streetAddress = null;
       }
       // Get user's preferred unit
       final isCelsius = homeProvider.isCelsius;
@@ -172,12 +184,24 @@ class WeatherProvider extends ChangeNotifier {
         units: units,
       );
       print('[WeatherProvider] Weather data fetched: \\${weatherData.temperature}');
+      
       final forecastData = await _weatherService.getForecast(
         latitude,
         longitude,
         units: units,
       );
       print('[WeatherProvider] Forecast data fetched');
+      
+      // Fetch air quality data
+      try {
+        final airQualityData = await _weatherService.getAirQuality(latitude, longitude);
+        print('[WeatherProvider] Air quality data fetched: AQI = \\${airQualityData.aqi}, category = \\${airQualityData.category}');
+        _airQuality = airQualityData;
+      } catch (aqiError) {
+        print('[WeatherProvider] Failed to fetch air quality data: \\${aqiError.toString()}');
+        _airQuality = null;
+      }
+      
       // TODO: Reactivate severe weather alerts fetching when API key is active
       // final alerts = await _weatherService.getSevereWeatherAlerts(
       //   position.latitude,
@@ -243,6 +267,15 @@ class WeatherProvider extends ChangeNotifier {
         units: units,
       );
       
+      // Fetch air quality data
+      try {
+        final airQualityData = await _weatherService.getAirQuality(latitude, longitude);
+        _airQuality = airQualityData;
+      } catch (aqiError) {
+        print('[WeatherProvider] Background refresh - failed to fetch air quality data: \\${aqiError.toString()}');
+        // Keep existing air quality data if fetch fails
+      }
+      
       _currentWeather = weatherData;
       _forecast = forecastData;
       
@@ -256,6 +289,82 @@ class WeatherProvider extends ChangeNotifier {
       print('[WeatherProvider] Background refresh error: ${e.toString()}');
       // Don't update error state for background refresh failures
       // This prevents showing error messages during automatic updates
+    }
+  }
+
+  // Fetch weather data for a specific location (for multi-location support)
+  Future<void> fetchWeatherDataForLocation({
+    required double latitude,
+    required double longitude,
+    required String city,
+    required String province,
+  }) async {
+    try {
+      print('[WeatherProvider] Fetching weather for location: $city, $province');
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+
+      // Update location data
+      _city = city;
+      _province = province;
+      _currentLocation = Position(
+        latitude: latitude,
+        longitude: longitude,
+        timestamp: DateTime.now(),
+        accuracy: 0,
+        altitude: 0,
+        heading: 0,
+        speed: 0,
+        speedAccuracy: 0,
+        altitudeAccuracy: 0,
+        headingAccuracy: 0,
+      );
+
+      // Get user's preferred unit from HomeProvider
+      // Note: We need to get this from a static context or pass it as a parameter
+      final units = 'metric'; // Default to metric, can be made configurable
+
+      // Fetch both current weather and forecast data
+      final weatherData = await _weatherService.getCurrentWeather(
+        latitude,
+        longitude,
+        units: units,
+      );
+
+      final forecastData = await _weatherService.getForecast(
+        latitude,
+        longitude,
+        units: units,
+      );
+
+      // Fetch air quality data
+      try {
+        final airQualityData = await _weatherService.getAirQuality(latitude, longitude);
+        _airQuality = airQualityData;
+      } catch (aqiError) {
+        print('[WeatherProvider] Failed to fetch air quality data for location: \\${aqiError.toString()}');
+        _airQuality = null;
+      }
+
+      _currentWeather = weatherData;
+      _forecast = forecastData;
+
+      // Generate wind forecast data
+      generateWindForecast();
+
+      // Save location data for persistence
+      await _saveLocationData();
+
+      _isLoading = false;
+      notifyListeners();
+
+      print('[WeatherProvider] Weather data fetched successfully for $city');
+    } catch (e) {
+      print('[WeatherProvider] Error fetching weather for location: ${e.toString()}');
+      _isLoading = false;
+      _error = e.toString();
+      notifyListeners();
     }
   }
 
@@ -407,6 +516,7 @@ class WeatherProvider extends ChangeNotifier {
       final longitude = prefs.getDouble('saved_longitude');
       final savedCity = prefs.getString('saved_city');
       final savedProvince = prefs.getString('saved_province');
+      final savedStreetAddress = prefs.getString('saved_street_address');
       
       if (latitude != null && longitude != null) {
         _currentLocation = Position(
@@ -423,7 +533,9 @@ class WeatherProvider extends ChangeNotifier {
         );
         _city = savedCity;
         _province = savedProvince;
+        _streetAddress = savedStreetAddress;
         print('[WeatherProvider] Loaded saved location: $savedCity, $savedProvince');
+        print('[WeatherProvider] Loaded street address: $savedStreetAddress');
         notifyListeners();
       }
     } catch (e) {
@@ -440,7 +552,9 @@ class WeatherProvider extends ChangeNotifier {
         await prefs.setDouble('saved_longitude', _currentLocation!.longitude);
         if (_city != null) await prefs.setString('saved_city', _city!);
         if (_province != null) await prefs.setString('saved_province', _province!);
+        if (_streetAddress != null) await prefs.setString('saved_street_address', _streetAddress!);
         print('[WeatherProvider] Saved location data: $_city, $_province');
+        print('[WeatherProvider] Saved street address: $_streetAddress');
       } catch (e) {
         print('[WeatherProvider] Error saving location: $e');
       }
@@ -455,9 +569,11 @@ class WeatherProvider extends ChangeNotifier {
       await prefs.remove('saved_longitude');
       await prefs.remove('saved_city');
       await prefs.remove('saved_province');
+      await prefs.remove('saved_street_address');
       _currentLocation = null;
       _city = null;
       _province = null;
+      _streetAddress = null;
       print('[WeatherProvider] Cleared saved location data');
       notifyListeners();
     } catch (e) {

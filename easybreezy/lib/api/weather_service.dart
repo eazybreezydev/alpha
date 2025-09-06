@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/weather_data.dart';
+import '../models/air_quality_data.dart';
 import 'package:geolocator/geolocator.dart';
 
 class WeatherService {
@@ -114,6 +115,28 @@ class WeatherService {
       }
     } catch (e) {
       throw Exception('Error fetching weather alerts: $e');
+    }
+  }
+
+  // Get current air pollution data (OpenWeatherMap Air Pollution API)
+  Future<AirQualityData> getAirQuality(double lat, double lon) async {
+    final url = 'https://api.openweathermap.org/data/2.5/air_pollution?lat=$lat&lon=$lon&appid=$apiKey';
+    
+    try {
+      final response = await http.get(Uri.parse(url));
+      
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        if (jsonData['list'] != null && jsonData['list'].isNotEmpty) {
+          return AirQualityData.fromJson(jsonData['list'][0]);
+        } else {
+          throw Exception('No air quality data available');
+        }
+      } else {
+        throw Exception('Failed to load air quality data: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching air quality data: $e');
     }
   }
 }
