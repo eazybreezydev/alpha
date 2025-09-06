@@ -64,7 +64,6 @@ class SimpleLocationDisplay extends StatelessWidget {
   }
 
   void _showLocationBottomSheet(BuildContext context) {
-    final locationProvider = Provider.of<LocationProvider>(context, listen: false);
     final weatherProvider = Provider.of<WeatherProvider>(context, listen: false);
     
     showModalBottomSheet(
@@ -75,70 +74,72 @@ class SimpleLocationDisplay extends StatelessWidget {
       ),
       builder: (context) => Padding(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Locations',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+        child: Consumer<LocationProvider>(
+          builder: (context, locationProvider, child) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Locations',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            
-            // Always show all saved locations
-            ...locationProvider.locations.map((location) => ListTile(
-              leading: Icon(
-                location.isCurrentLocation ? Icons.my_location : Icons.place,
-                color: Colors.blue,
-              ),
-              title: Text(location.name),
-              subtitle: Text('${location.city}, ${location.province}'),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (locationProvider.currentLocation?.id == location.id)
-                    const Icon(Icons.check, color: Colors.green),
-                  if (!location.isCurrentLocation)
-                    IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => _showDeleteConfirmation(context, location, locationProvider),
-                    ),
-                ],
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                locationProvider.switchToLocation(location.id, weatherProvider);
-              },
-            )),
-            
-            // If no locations exist, show current weather location option
-            if (locationProvider.locations.isEmpty) ...[
-              ListTile(
-                leading: const Icon(Icons.my_location, color: Colors.blue),
-                title: Text(_getCurrentLocationText(context)),
-                subtitle: const Text('Current location'),
-                trailing: const Icon(Icons.check, color: Colors.green),
-                onTap: () => Navigator.pop(context),
-              ),
-            ],
-            
-            // Add location option
-            if (locationProvider.canAddLocation) ...[
-              const Divider(),
-              ListTile(
-                leading: const Icon(Icons.add, color: Colors.green),
-                title: const Text('Add Location'),
-                subtitle: Text('${2 - locationProvider.locations.length} slots remaining'),
+              const SizedBox(height: 16),
+              
+              // Always show all saved locations
+              ...locationProvider.locations.map((location) => ListTile(
+                leading: Icon(
+                  location.isCurrentLocation ? Icons.my_location : Icons.place,
+                  color: Colors.blue,
+                ),
+                title: Text(location.name),
+                subtitle: Text('${location.city}, ${location.province}'),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (locationProvider.currentLocation?.id == location.id)
+                      const Icon(Icons.check, color: Colors.green),
+                    if (!location.isCurrentLocation)
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () => _showDeleteConfirmation(context, location, locationProvider),
+                      ),
+                  ],
+                ),
                 onTap: () {
                   Navigator.pop(context);
-                  _showAddLocationDialog(context);
+                  locationProvider.switchToLocation(location.id, weatherProvider);
                 },
-              ),
+              )),
+            
+              // If no locations exist, show current weather location option
+              if (locationProvider.locations.isEmpty) ...[
+                ListTile(
+                  leading: const Icon(Icons.my_location, color: Colors.blue),
+                  title: Text(_getCurrentLocationText(context)),
+                  subtitle: const Text('Current location'),
+                  trailing: const Icon(Icons.check, color: Colors.green),
+                  onTap: () => Navigator.pop(context),
+                ),
+              ],
+              
+              // Add location option
+              if (locationProvider.canAddLocation) ...[
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.add, color: Colors.green),
+                  title: const Text('Add Location'),
+                  subtitle: Text('${2 - locationProvider.locations.length} slots remaining'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showAddLocationDialog(context);
+                  },
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -168,9 +169,12 @@ class SimpleLocationDisplay extends StatelessWidget {
     
     // Show feedback to user
     if (success) {
+      // Switch to the newly added location to show immediate feedback
+      locationProvider.switchToLocation(newLocation.id, weatherProvider);
+      
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${newLocation.name} added successfully!')),
+          SnackBar(content: Text('${newLocation.name} added and activated!')),
         );
       }
     } else {
