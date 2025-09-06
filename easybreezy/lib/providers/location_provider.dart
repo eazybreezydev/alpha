@@ -103,7 +103,7 @@ class LocationProvider extends ChangeNotifier {
         _currentLocation = _locations.first;
       }
     } catch (e) {
-      print('Error loading locations: $e');
+      print('ERROR loading locations: $e');
       _locations = [];
       _currentLocation = null;
     }
@@ -122,7 +122,7 @@ class LocationProvider extends ChangeNotifier {
         await prefs.setString('current_location_id', _currentLocation!.id);
       }
     } catch (e) {
-      print('Error saving locations: $e');
+      print('ERROR saving locations: $e');
     }
   }
   
@@ -161,6 +161,30 @@ class LocationProvider extends ChangeNotifier {
     // If this is the first location or marked as current, set it as current
     if (_currentLocation == null || isCurrentLocation) {
       _currentLocation = newLocation;
+    }
+    
+    await _saveLocations();
+    notifyListeners();
+    return true;
+  }
+
+  /// Add a new location from a LocationModel (includes orientation data)
+  Future<bool> addLocationFromModel(LocationModel location) async {
+    // If this is the first location being added and we don't have the current weather location saved,
+    // automatically save the current weather location first
+    if (_locations.isEmpty && _currentLocation == null) {
+      await _saveCurrentWeatherLocationIfNeeded();
+    }
+    
+    if (!canAddLocation) {
+      return false; // Reached max locations limit
+    }
+    
+    _locations.add(location);
+    
+    // If this is the first location or marked as current, set it as current
+    if (_currentLocation == null || location.isCurrentLocation) {
+      _currentLocation = location;
     }
     
     await _saveLocations();

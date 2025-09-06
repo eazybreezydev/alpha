@@ -7,12 +7,14 @@ class WindForecastChart extends StatefulWidget {
   final List<WindData> windData;
   final DateTime? peakStartTime;
   final DateTime? peakEndTime;
+  final bool isCelsius;
 
   const WindForecastChart({
     Key? key,
     required this.windData,
     this.peakStartTime,
     this.peakEndTime,
+    this.isCelsius = false, // Default to imperial (mph)
   }) : super(key: key);
 
   @override
@@ -21,6 +23,20 @@ class WindForecastChart extends StatefulWidget {
 
 class _WindForecastChartState extends State<WindForecastChart> {
   int touchedIndex = -1;
+
+  // Convert wind speed based on user preference
+  double _convertWindSpeed(double speedKmh) {
+    if (widget.isCelsius) {
+      return speedKmh; // Keep km/h for metric
+    } else {
+      return speedKmh * 0.621371; // Convert km/h to mph for imperial
+    }
+  }
+
+  // Get the appropriate unit string
+  String _getWindUnit() {
+    return widget.isCelsius ? 'km/h' : 'mph';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -98,8 +114,8 @@ class _WindForecastChartState extends State<WindForecastChart> {
             color: Colors.blue.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: const Text(
-            'km/h',
+          child: Text(
+            _getWindUnit(),
             style: TextStyle(
               fontSize: 12,
               color: Colors.blue,
@@ -200,7 +216,7 @@ class _WindForecastChartState extends State<WindForecastChart> {
       spots: widget.windData
           .asMap()
           .entries
-          .map((entry) => FlSpot(entry.key.toDouble(), entry.value.speed))
+          .map((entry) => FlSpot(entry.key.toDouble(), _convertWindSpeed(entry.value.speed)))
           .toList(),
       isCurved: true,
       gradient: LinearGradient(
@@ -246,7 +262,7 @@ class _WindForecastChartState extends State<WindForecastChart> {
       final data = widget.windData[i];
       if (data.timestamp.isAfter(widget.peakStartTime!) &&
           data.timestamp.isBefore(widget.peakEndTime!)) {
-        peakSpots.add(FlSpot(i.toDouble(), data.speed));
+        peakSpots.add(FlSpot(i.toDouble(), _convertWindSpeed(data.speed)));
       }
     }
 
@@ -335,7 +351,7 @@ class _WindForecastChartState extends State<WindForecastChart> {
       final timeFormat = DateFormat('h:mm a');
       
       return LineTooltipItem(
-        '${timeFormat.format(windData.timestamp)}\n${windData.speed.toStringAsFixed(1)} km/h',
+        '${timeFormat.format(windData.timestamp)}\n${_convertWindSpeed(windData.speed).toStringAsFixed(1)} ${_getWindUnit()}',
         textStyle,
       );
     }).toList();
@@ -378,8 +394,9 @@ class _WindForecastChartState extends State<WindForecastChart> {
 
   double _getMaxWindSpeed() {
     if (widget.windData.isEmpty) return 20;
-    return widget.windData
+    final maxSpeed = widget.windData
         .map((data) => data.speed)
         .reduce((a, b) => a > b ? a : b);
+    return _convertWindSpeed(maxSpeed);
   }
 }

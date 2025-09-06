@@ -190,6 +190,7 @@ class HomeDashboard extends StatelessWidget {
                                 windData: weatherProvider.windForecast,
                                 peakStartTime: weatherProvider.getPeakWindStartTime(),
                                 peakEndTime: weatherProvider.getPeakWindEndTime(),
+                                isCelsius: homeProvider.isCelsius,
                               ),
                             ),
                             const SizedBox(height: 24),

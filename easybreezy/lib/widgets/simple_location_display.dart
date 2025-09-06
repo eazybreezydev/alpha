@@ -5,6 +5,7 @@ import '../providers/location_provider.dart';
 import '../providers/weather_provider.dart';
 import '../providers/home_provider.dart';
 import '../models/location_model.dart';
+import '../widgets/add_location_modal.dart';
 
 class SimpleLocationDisplay extends StatelessWidget {
   final Color textColor;
@@ -144,105 +145,41 @@ class SimpleLocationDisplay extends StatelessWidget {
   }
 
   void _showAddLocationDialog(BuildContext context) {
-    final TextEditingController nameController = TextEditingController();
-    final TextEditingController locationController = TextEditingController();
-    bool isLoading = false;
+    // Get provider references BEFORE showing the modal
+    final locationProvider = Provider.of<LocationProvider>(context, listen: false);
+    final weatherProvider = Provider.of<WeatherProvider>(context, listen: false);
+    
+    showAddLocationModal(context, (LocationModel newLocation) {
+      // This callback is now executed AFTER the modal closes, so context should be safe
+      _handleLocationAdded(context, newLocation, locationProvider, weatherProvider);
+    });
+  }
 
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('Add Location'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Name (e.g., "Cottage")',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: locationController,
-                decoration: const InputDecoration(
-                  labelText: 'Location (e.g., "Muskoka, ON")',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              if (isLoading) ...[
-                const SizedBox(height: 16),
-                const CircularProgressIndicator(),
-              ],
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: isLoading ? null : () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: isLoading ? null : () async {
-                if (nameController.text.isNotEmpty && locationController.text.isNotEmpty) {
-                  setState(() => isLoading = true);
-                  
-                  try {
-                    // Geocode the location
-                    List<Location> locations = await locationFromAddress(locationController.text);
-                    if (locations.isNotEmpty) {
-                      final location = locations.first;
-                      
-                      // Parse city and province from location string
-                      final locationParts = locationController.text.split(',');
-                      final city = locationParts.first.trim();
-                      final province = locationParts.length > 1 ? locationParts.last.trim() : '';
-                      
-                      // Add to LocationProvider
-                      final locationProvider = Provider.of<LocationProvider>(context, listen: false);
-                      final weatherProvider = Provider.of<WeatherProvider>(context, listen: false);
-                      
-                      // If this is the first location being added, save the current weather location first
-                      if (locationProvider.locations.isEmpty) {
-                        await _saveCurrentWeatherLocation(context, locationProvider, weatherProvider);
-                      }
-                      
-                      final success = await locationProvider.addLocation(
-                        name: nameController.text,
-                        city: city,
-                        province: province,
-                        latitude: location.latitude,
-                        longitude: location.longitude,
-                        isCurrentLocation: false,
-                      );
-                      
-                      Navigator.pop(context);
-                      if (success) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('${nameController.text} added successfully!')),
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Error: Maximum locations reached (2 max for free tier)')),
-                        );
-                      }
-                    } else {
-                      throw Exception('Location not found');
-                    }
-                  } catch (e) {
-                    setState(() => isLoading = false);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Error: Could not find location "${locationController.text}"')),
-                    );
-                  }
-                }
-              },
-              child: const Text('Add'),
-            ),
-          ],
-        ),
-      ),
-    );
+  // Separate method to handle location addition after modal closes
+  void _handleLocationAdded(BuildContext context, LocationModel newLocation, 
+      LocationProvider locationProvider, WeatherProvider weatherProvider) async {
+    // If this is the first location being added, save the current weather location first
+    if (locationProvider.locations.isEmpty) {
+      await _saveCurrentWeatherLocation(context, locationProvider, weatherProvider);
+    }
+    
+    // Add the new location using the complete data from the modal
+    final success = await locationProvider.addLocationFromModel(newLocation);
+    
+    // Show feedback to user
+    if (success) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${newLocation.name} added successfully!')),
+        );
+      }
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error: Maximum locations reached (2 max for free tier)')),
+        );
+      }
+    }
   }
 
   /// Save the current weather location as the first saved location
