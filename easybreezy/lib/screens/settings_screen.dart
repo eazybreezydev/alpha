@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/home_provider.dart';
 import '../providers/weather_provider.dart';
+import '../providers/location_provider.dart';
 import '../models/home_config.dart';
 import '../widgets/wind_flow_animation.dart'; // Import new wind flow system
 import '../services/auto_refresh_service.dart';
@@ -84,7 +85,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     final homeProvider = Provider.of<HomeProvider>(context, listen: false);
+    final locationProvider = Provider.of<LocationProvider>(context, listen: false);
     final homeConfig = homeProvider.homeConfig;
+    
     _selectedOrientation = homeConfig.orientation;
     _selectedWindows = Map.from(homeConfig.windows);
     _tempRange = RangeValues(
@@ -93,7 +96,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
     _notificationsEnabled = homeConfig.notificationsEnabled;
     _useCelsius = homeProvider.isCelsius;
-    _address = homeConfig.address ?? '';
+    
+    // Use current active location address instead of home config address
+    final currentLocation = locationProvider.currentLocation;
+    if (currentLocation != null) {
+      _address = currentLocation.address ?? '';
+    } else {
+      _address = homeConfig.address ?? '';
+    }
     _addressController = TextEditingController(text: _address);
     
     // Initialize detailed notification settings
@@ -102,8 +112,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     // Initialize auto-refresh settings
     _autoRefreshEnabled = AutoRefreshService().isEnabled;
     
-    // Load saved coordinates if available
-    if (homeConfig.latitude != null && homeConfig.longitude != null) {
+    // Load saved coordinates from current active location if available
+    if (currentLocation != null) {
+      _selectedCoords = {
+        'lat': currentLocation.latitude,
+        'lng': currentLocation.longitude,
+      };
+    } else if (homeConfig.latitude != null && homeConfig.longitude != null) {
       _selectedCoords = {
         'lat': homeConfig.latitude!,
         'lng': homeConfig.longitude!,
@@ -423,12 +438,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   windSpeed: windSpeed.toDouble(),
                   subtleMode: windSpeed < 15, // Subtle mode for light winds
                 ),
-              ListView(
-                padding: EdgeInsets.only(
-                  top: MediaQuery.of(context).padding.top + kToolbarHeight,
-                  bottom: 120, // Add bottom margin to access reset wizard button
-                ),
-                children: [
+                ListView(
+                  padding: EdgeInsets.only(
+                    top: MediaQuery.of(context).padding.top + kToolbarHeight,
+                    bottom: 120, // Add bottom margin to access reset wizard button
+                  ),
+                  children: [
                   const SizedBox(height: 16),
                   
                   // Auto-Refresh Section
@@ -1020,7 +1035,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           
           const SizedBox(height: 24),
 
-          // Address Section
+          // Address Section - Show Current Active Location
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Card(
@@ -1029,47 +1044,90 @@ class _SettingsScreenState extends State<SettingsScreen> {
               color: Colors.white,
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Home Address',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _addressController,
-                      style: const TextStyle(color: Colors.black87),
-                      decoration: const InputDecoration(
-                        labelText: 'Enter your home address',
-                        labelStyle: TextStyle(color: Colors.black87),
-                        hintText: '123 Main St, City, State',
-                        hintStyle: TextStyle(color: Colors.grey),
-                        suffixIcon: Icon(Icons.location_on),
-                      ),
-                      onChanged: (value) {
+                child: Consumer<LocationProvider>(
+                  builder: (context, locationProvider, child) {
+                    // Update address controller when current location changes
+                    final currentLocation = locationProvider.currentLocation;
+                    if (currentLocation != null && _addressController.text != (currentLocation.address ?? '')) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        _addressController.text = currentLocation.address ?? '';
                         setState(() {
-                          _address = value;
+                          _address = currentLocation.address ?? '';
+                          // Also update coordinates when location changes
+                          _selectedCoords = {
+                            'lat': currentLocation.latitude,
+                            'lng': currentLocation.longitude,
+                          };
                         });
-                        _fetchAddressSuggestions(value);
-                      },
-                      onFieldSubmitted: (value) async {
-                        // When user presses enter or submits, try to get coordinates for manually typed address
-                        if (value.isNotEmpty && _selectedCoords == null) {
-                          final coords = await _fetchPlaceCoordinates(value);
-                          if (coords != null) {
+                      });
+                    }
+                    
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              currentLocation != null ? 'Current Location' : 'Home Address',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            if (currentLocation != null) 
+                              const SizedBox(width: 8),
+                            if (currentLocation != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.shade100,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.blue.shade300),
+                                ),
+                                child: Text(
+                                  currentLocation!.name,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.blue.shade700,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _addressController,
+                          style: const TextStyle(color: Colors.black87),
+                          decoration: InputDecoration(
+                            labelText: currentLocation != null 
+                                ? 'Current active location address' 
+                                : 'Enter your home address',
+                            labelStyle: const TextStyle(color: Colors.black87),
+                            hintText: '123 Main St, City, State',
+                            hintStyle: const TextStyle(color: Colors.grey),
+                            suffixIcon: const Icon(Icons.location_on),
+                          ),
+                          onChanged: (value) {
                             setState(() {
-                              _selectedCoords = coords;
+                              _address = value;
                             });
-                            _fetchPlaceDetailsAndSuggestOrientation(value);
-                          }
-                        }
-                      },
-                    ),
+                            _fetchAddressSuggestions(value);
+                          },
+                          onFieldSubmitted: (value) async {
+                            // When user presses enter or submits, try to get coordinates for manually typed address
+                            if (value.isNotEmpty && _selectedCoords == null) {
+                              final coords = await _fetchPlaceCoordinates(value);
+                              if (coords != null) {
+                                setState(() {
+                                  _selectedCoords = coords;
+                                });
+                                _fetchPlaceDetailsAndSuggestOrientation(value);
+                              }
+                            }
+                          },
+                        ),
                     if (_isLoadingSuggestions)
                       const Padding(
                         padding: EdgeInsets.only(top: 8.0),
@@ -1208,12 +1266,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ],
                         ),
                       ),
-                    ],
-                  ],
+                    ], // Close conditional spread
+                      ], // Close Column children  
+                    ); // Close Column
+                  },
                 ),
               ),
             ),
           ),
+
           const SizedBox(height: 24),
 
           // Save Button
@@ -1258,10 +1319,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
         ],
       ),
-              ],
-            ),
+            ],
           ),
-        );
+        ), // Close Container (body)
+      ); // Close Scaffold
       },
     );
   }
