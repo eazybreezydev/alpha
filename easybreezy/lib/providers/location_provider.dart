@@ -44,13 +44,13 @@ class LocationProvider extends ChangeNotifier {
       // Check if we need to update the name to include street address
       final homeLocation = _locations.firstWhere((location) => location.isCurrentLocation);
       if (homeLocation.name == "Home" && name != "Home" && name.isNotEmpty) {
-        await _updateLocationName(homeLocation.id, name);
+        await updateLocationName(homeLocation.id, name);
       }
     }
   }
 
   /// Update location name by ID
-  Future<void> _updateLocationName(String locationId, String newName) async {
+  Future<void> updateLocationName(String locationId, String newName) async {
     final locationIndex = _locations.indexWhere((location) => location.id == locationId);
     if (locationIndex != -1) {
       final location = _locations[locationIndex];
@@ -59,9 +59,12 @@ class LocationProvider extends ChangeNotifier {
         name: newName,
         city: location.city,
         province: location.province,
+        address: location.address,
         latitude: location.latitude,
         longitude: location.longitude,
+        orientation: location.orientation,
         isCurrentLocation: location.isCurrentLocation,
+        isHome: location.isHome,
         createdAt: location.createdAt,
       );
       _locations[locationIndex] = updatedLocation;

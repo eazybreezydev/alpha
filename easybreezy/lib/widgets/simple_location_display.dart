@@ -101,7 +101,14 @@ class SimpleLocationDisplay extends StatelessWidget {
                   children: [
                     if (locationProvider.currentLocation?.id == location.id)
                       const Icon(Icons.check, color: Colors.green),
-                    if (!location.isCurrentLocation)
+                    // Rename button (always available)
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.blue),
+                      onPressed: () => _showRenameDialog(context, location, locationProvider),
+                    ),
+                    // Show delete button for alternative locations (always)
+                    // or primary location (only if there are multiple locations)
+                    if (!location.isCurrentLocation || locationProvider.locations.length > 1)
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
                         onPressed: () => _showDeleteConfirmation(context, location, locationProvider),
@@ -215,11 +222,32 @@ class SimpleLocationDisplay extends StatelessWidget {
   }
 
   void _showDeleteConfirmation(BuildContext context, LocationModel location, LocationProvider locationProvider) {
+    // Safety check: Don't allow deleting primary location if it's the only one
+    if (location.isCurrentLocation && locationProvider.locations.length <= 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cannot delete the only location. Add another location first.')),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Location'),
-        content: Text('Are you sure you want to delete "${location.name}"?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Are you sure you want to delete "${location.name}"?'),
+            if (location.isCurrentLocation) ...[
+              const SizedBox(height: 8),
+              const Text(
+                'This is your primary location. The app will switch to your other saved location.',
+                style: TextStyle(fontSize: 12, color: Colors.orange),
+              ),
+            ],
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -235,6 +263,60 @@ class SimpleLocationDisplay extends StatelessWidget {
               );
             },
             child: const Text('Delete', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRenameDialog(BuildContext context, LocationModel location, LocationProvider locationProvider) {
+    final TextEditingController nameController = TextEditingController(text: location.name);
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Rename Location'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Current location: ${location.city}, ${location.province}'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(
+                labelText: 'Location Name',
+                hintText: 'e.g., Home, Work, Cottage',
+                border: OutlineInputBorder(),
+              ),
+              textCapitalization: TextCapitalization.words,
+              autofocus: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final newName = nameController.text.trim();
+              if (newName.isNotEmpty && newName != location.name) {
+                await locationProvider.updateLocationName(location.id, newName);
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Location renamed to "$newName"')),
+                );
+              } else if (newName.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Please enter a valid name')),
+                );
+              } else {
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Rename'),
           ),
         ],
       ),
