@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 // import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 import 'providers/home_provider.dart';
@@ -14,6 +15,7 @@ import 'providers/notification_provider.dart';
 import 'screens/splash_screen.dart'; // Import SplashScreen
 import 'utils/notification_service.dart';
 import 'services/firebase_messaging_service.dart';
+import 'services/firebase_analytics_service.dart';
 import 'services/auto_refresh_service.dart';
 
 // Background message handler - must be top-level function
@@ -54,6 +56,16 @@ void main() async {
       
     } catch (messagingError) {
       print('❌ Firebase Messaging error: $messagingError');
+    }
+
+    // Initialize Firebase Analytics Service
+    try {
+      print('Initializing Firebase Analytics Service...');
+      await FirebaseAnalyticsService.initialize();
+      print('✅ Firebase Analytics Service initialized');
+      
+    } catch (analyticsError) {
+      print('❌ Firebase Analytics error: $analyticsError');
     }
     
   } catch (firebaseError) {
@@ -97,6 +109,9 @@ class MyApp extends StatelessWidget {
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         ),
+        navigatorObservers: [
+          FirebaseAnalyticsObserver(analytics: FirebaseAnalytics.instance),
+        ],
         home: const SplashScreen(), // Start with SplashScreen
       ),
     );

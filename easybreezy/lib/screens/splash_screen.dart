@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/home_provider.dart';
 import '../providers/notification_provider.dart';
+import '../services/firebase_analytics_service.dart';
 import 'onboarding_screen.dart';
 import 'main_shell.dart';
 
@@ -21,6 +22,11 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _navigateAfterDelay() async {
+    // Track app launch
+    await FirebaseAnalyticsService.logEvent('app_launch', {
+      'launch_time': DateTime.now().toIso8601String(),
+    });
+    
     // Wait for minimum splash time
     await Future.delayed(const Duration(seconds: 3));
     
@@ -34,8 +40,19 @@ class _SplashScreenState extends State<SplashScreen> {
       print('🔔 Initializing NotificationProvider...');
       await notificationProvider.initialize();
       print('✅ NotificationProvider initialized successfully');
+      
+      // Track notification provider initialization
+      await FirebaseAnalyticsService.logEvent('notification_provider_initialized', {
+        'success': true,
+      });
     } catch (e) {
       print('❌ Error initializing NotificationProvider: $e');
+      
+      // Track notification provider initialization failure
+      await FirebaseAnalyticsService.logEvent('notification_provider_initialized', {
+        'success': false,
+        'error': e.toString(),
+      });
     }
     
     // Wait for HomeProvider to be initialized (load saved data)
@@ -48,16 +65,28 @@ class _SplashScreenState extends State<SplashScreen> {
     final hasCompletedSetup = await homeProvider.hasCompletedInitialSetup();
     
     Widget nextScreen;
+    String destinationScreen;
+    
     if (hasCompletedSetup) {
       // User has completed setup and has saved data - go to main app
       nextScreen = const MainShell();
+      destinationScreen = 'main_shell';
     } else if (homeProvider.isOnboardingCompleted) {
       // User completed onboarding but no location data - go to main app (will prompt for location)
       nextScreen = const MainShell();
+      destinationScreen = 'main_shell_no_location';
     } else {
       // User hasn't completed onboarding - go to onboarding
       nextScreen = const OnboardingScreen();
+      destinationScreen = 'onboarding';
     }
+
+    // Track navigation decision
+    await FirebaseAnalyticsService.logEvent('splash_navigation', {
+      'destination': destinationScreen,
+      'has_completed_setup': hasCompletedSetup,
+      'onboarding_completed': homeProvider.isOnboardingCompleted,
+    });
     
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(

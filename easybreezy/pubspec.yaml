@@ -25,6 +25,7 @@ dependencies:
   url_launcher: ^6.3.2
   firebase_core: ^3.15.2
   firebase_messaging: ^15.2.10
+  firebase_analytics: ^11.3.3
   card_swiper: ^3.0.1
 
 dev_dependencies:
