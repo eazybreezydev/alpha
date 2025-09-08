@@ -100,7 +100,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     // Use current active location address instead of home config address
     final currentLocation = locationProvider.currentLocation;
     if (currentLocation != null) {
-      _address = currentLocation.address ?? '';
+      // Use address field if available, otherwise fall back to name
+      _address = currentLocation.address?.isNotEmpty == true 
+          ? currentLocation.address! 
+          : currentLocation.name;
     } else {
       _address = homeConfig.address ?? '';
     }
@@ -1048,18 +1051,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   builder: (context, locationProvider, child) {
                     // Update address controller when current location changes
                     final currentLocation = locationProvider.currentLocation;
-                    if (currentLocation != null && _addressController.text != (currentLocation.address ?? '')) {
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        _addressController.text = currentLocation.address ?? '';
-                        setState(() {
-                          _address = currentLocation.address ?? '';
-                          // Also update coordinates when location changes
-                          _selectedCoords = {
-                            'lat': currentLocation.latitude,
-                            'lng': currentLocation.longitude,
-                          };
+                    if (currentLocation != null) {
+                      // Use address field if available, otherwise fall back to name
+                      final locationAddress = currentLocation.address?.isNotEmpty == true 
+                          ? currentLocation.address! 
+                          : currentLocation.name;
+                      
+                      if (_addressController.text != locationAddress) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          _addressController.text = locationAddress;
+                          setState(() {
+                            _address = locationAddress;
+                            // Also update coordinates when location changes
+                            _selectedCoords = {
+                              'lat': currentLocation.latitude,
+                              'lng': currentLocation.longitude,
+                            };
+                          });
                         });
-                      });
+                      }
                     }
                     
                     return Column(
