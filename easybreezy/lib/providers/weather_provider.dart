@@ -20,6 +20,7 @@ class WeatherProvider extends ChangeNotifier {
   String? _city; // Added city property
   String? _province; // Add province/state property
   String? _streetAddress; // Add street address property
+  String? _weatherDataUnits; // Track the units used to fetch weather data
   bool _isLoading = false;
   String? _error;
   List<Map<String, dynamic>> _alerts = [];
@@ -45,6 +46,7 @@ class WeatherProvider extends ChangeNotifier {
   String? get city => _city; // City getter
   String? get province => _province; // Province getter
   String? get streetAddress => _streetAddress; // Street address getter
+  String? get weatherDataUnits => _weatherDataUnits; // Weather data units getter
   bool get isLoading => _isLoading;
   String? get error => _error;
   List<Map<String, dynamic>> get alerts => _alerts;
@@ -177,6 +179,7 @@ class WeatherProvider extends ChangeNotifier {
       // Get user's preferred unit
       final isCelsius = homeProvider.isCelsius;
       final units = isCelsius ? 'metric' : 'imperial';
+      
       // Fetch both current weather and forecast data
       final weatherData = await _weatherService.getCurrentWeather(
         latitude, 
@@ -191,6 +194,9 @@ class WeatherProvider extends ChangeNotifier {
         units: units,
       );
       print('[WeatherProvider] Forecast data fetched');
+      
+      // Store the units that were used to fetch this weather data
+      _weatherDataUnits = units;
       
       // Fetch air quality data
       try {
@@ -298,6 +304,7 @@ class WeatherProvider extends ChangeNotifier {
     required double longitude,
     required String city,
     required String province,
+    BuildContext? context,
   }) async {
     try {
       print('[WeatherProvider] Fetching weather for location: $city, $province');
@@ -321,9 +328,19 @@ class WeatherProvider extends ChangeNotifier {
         headingAccuracy: 0,
       );
 
-      // Get user's preferred unit from HomeProvider
-      // Note: We need to get this from a static context or pass it as a parameter
-      final units = 'metric'; // Default to metric, can be made configurable
+      // Get user's preferred unit - use context if available, otherwise default to metric
+      String units = 'metric'; // Default to metric
+      if (context != null) {
+        try {
+          final homeProvider = Provider.of<HomeProvider>(context, listen: false);
+          units = homeProvider.isCelsius ? 'metric' : 'imperial';
+          print('[WeatherProvider] Using units from context: $units (isCelsius: ${homeProvider.isCelsius})');
+        } catch (e) {
+          print('[WeatherProvider] Could not get unit preference, using metric: $e');
+        }
+      } else {
+        print('[WeatherProvider] No context provided, defaulting to metric units');
+      }
 
       // Fetch both current weather and forecast data
       final weatherData = await _weatherService.getCurrentWeather(
@@ -349,6 +366,12 @@ class WeatherProvider extends ChangeNotifier {
 
       _currentWeather = weatherData;
       _forecast = forecastData;
+
+      // Store the units that were used to fetch this weather data
+      _weatherDataUnits = units;
+
+      // Debug the wind speed data we just fetched
+      print('[WeatherProvider] Location weather fetched - Wind Speed: ${weatherData.windSpeed}, Units: $units, City: $city');
 
       // Generate wind forecast data
       generateWindForecast();

@@ -119,18 +119,27 @@ class HomeDashboard extends StatelessWidget {
                                     child: Builder(
                                       builder: (context) {
                                         try {
+                                          // Debug the raw values first
+                                          print('Wind Debug - weatherData: ${weatherData?.windSpeed}, windSpeed var: $windSpeed, weatherDataUnits: ${weatherProvider.weatherDataUnits}');
+                                          
                                           // Convert wind speed to km/h for consistent animation logic
-                                          double windSpeedKmh = homeProvider.isCelsius 
-                                            ? windSpeed * 3.6  // m/s to km/h
-                                            : windSpeed * 1.60934; // mph to km/h
+                                          // Use the actual units from the weather data, not user preference
+                                          double windSpeedKmh;
+                                          if (weatherProvider.weatherDataUnits == 'metric') {
+                                            // Wind speed is in m/s, convert to km/h
+                                            windSpeedKmh = windSpeed * 3.6;
+                                          } else {
+                                            // Wind speed is in mph, convert to km/h
+                                            windSpeedKmh = windSpeed * 1.60934;
+                                          }
                                           
                                           // Debug output to verify correct wind speed conversion
-                                          print('Wind Animation Debug: Raw=${windSpeed.toStringAsFixed(1)}, Converted=${windSpeedKmh.toStringAsFixed(1)} km/h, Units=${homeProvider.isCelsius ? "Celsius" : "Imperial"}');
+                                          print('Wind Animation Debug: Raw=${windSpeed.toStringAsFixed(1)}, Converted=${windSpeedKmh.toStringAsFixed(1)} km/h, SourceUnits=${weatherProvider.weatherDataUnits ?? "unknown"}');
                                           
                                           return WindFlowOverlay(
                                             windDirection: windDirection,
                                             windSpeed: windSpeedKmh,
-                                            subtleMode: windSpeedKmh < 15, // Subtle mode for light winds
+                                            subtleMode: windSpeedKmh < 25, // Increased threshold - subtle mode for winds under 25 km/h
                                           );
                                         } catch (e) {
                                           // Fallback: return empty container if wind animation fails

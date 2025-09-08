@@ -104,7 +104,7 @@ class LocationDropdown extends StatelessWidget {
               subtitle: Text(location.fullLocation),
               onTap: () {
                 Navigator.pop(context);
-                locationProvider.switchToLocation(location.id, weatherProvider);
+                locationProvider.switchToLocation(location.id, weatherProvider, context: context);
               },
             )),
             

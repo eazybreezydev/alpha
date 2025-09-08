@@ -251,6 +251,12 @@ class WindStreakManager {
   double spawnInterval = 0.05; // Spawn every 50ms for dense effect
 
   void updateWindParameters(double windSpeed, String windDirection, bool subtleMode) {
+    // Clear existing streaks to prevent accumulation from previous location's wind speeds
+    streaks.clear();
+    lastSpawnTime = 0; // Reset spawn timing
+    
+    print('[WindFlowOverlay] updateWindParameters: windSpeed=${windSpeed.toStringAsFixed(1)} km/h, subtleMode=$subtleMode');
+    
     // Realistically scaled streak counts based on actual wind conditions
     int baseStreakCount;
     
@@ -284,6 +290,8 @@ class WindStreakManager {
     // Reasonable limits for realistic animation
     targetStreakCount = targetStreakCount.clamp(2, 150);
     
+    print('[WindFlowOverlay] Streak calculation: baseStreakCount=$baseStreakCount, windVariation=$windVariation, targetStreakCount=$targetStreakCount');
+    
     // Spawn rates that match wind intensity
     if (windSpeed < 1) {
       spawnInterval = subtleMode ? 0.5 : 0.3; // Very slow for calm
@@ -300,6 +308,8 @@ class WindStreakManager {
     } else {
       spawnInterval = subtleMode ? 0.05 : 0.03; // Fast for strong winds
     }
+    
+    print('[WindFlowOverlay] Final parameters: baseStreakCount=$baseStreakCount, targetStreakCount=$targetStreakCount, spawnInterval=$spawnInterval');
   }
 
   void update(double deltaTime, Size canvasSize, double windSpeed, String windDirection, bool subtleMode) {

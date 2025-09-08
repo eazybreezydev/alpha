@@ -117,7 +117,7 @@ class SimpleLocationDisplay extends StatelessWidget {
                 ),
                 onTap: () {
                   Navigator.pop(context);
-                  locationProvider.switchToLocation(location.id, weatherProvider);
+                  locationProvider.switchToLocation(location.id, weatherProvider, context: context);
                 },
               )),
             
@@ -177,7 +177,7 @@ class SimpleLocationDisplay extends StatelessWidget {
     // Show feedback to user
     if (success) {
       // Switch to the newly added location to show immediate feedback
-      locationProvider.switchToLocation(newLocation.id, weatherProvider);
+      locationProvider.switchToLocation(newLocation.id, weatherProvider, context: context);
       
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

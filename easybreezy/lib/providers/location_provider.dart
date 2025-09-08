@@ -224,7 +224,7 @@ class LocationProvider extends ChangeNotifier {
   }
   
   /// Switch to a different location
-  Future<void> switchToLocation(String locationId, WeatherProvider weatherProvider) async {
+  Future<void> switchToLocation(String locationId, WeatherProvider weatherProvider, {BuildContext? context}) async {
     LocationModel? location;
     try {
       location = _locations.firstWhere(
@@ -246,6 +246,7 @@ class LocationProvider extends ChangeNotifier {
       longitude: location.longitude,
       city: location.city,
       province: location.province,
+      context: context,
     );
     
     notifyListeners();
