@@ -263,24 +263,31 @@ class WindStreakManager {
     if (windSpeed < 1) {
       // Calm: very minimal streaks
       baseStreakCount = subtleMode ? 2 : 5;
+      print('[WindFlowOverlay] Wind range: < 1 km/h (calm)');
     } else if (windSpeed < 5) {
       // Light air: subtle animation
       baseStreakCount = subtleMode ? 5 : 10;
+      print('[WindFlowOverlay] Wind range: 1-5 km/h (light air)');
     } else if (windSpeed < 11) {
       // Light breeze: noticeable but gentle
       baseStreakCount = subtleMode ? 10 : 18;
+      print('[WindFlowOverlay] Wind range: 5-11 km/h (light breeze)');
     } else if (windSpeed < 19) {
       // Gentle breeze: moderate animation (15 km/h falls here)
-      baseStreakCount = subtleMode ? 18 : 30;
+      baseStreakCount = subtleMode ? 15 : 30;
+      print('[WindFlowOverlay] Wind range: 11-19 km/h (gentle breeze)');
     } else if (windSpeed < 28) {
-      // Moderate breeze: more active
-      baseStreakCount = subtleMode ? 30 : 50;
+      // Moderate breeze: treat like calm winds in subtle mode for cottage-like locations
+      baseStreakCount = subtleMode ? 5 : 50;
+      print('[WindFlowOverlay] Wind range: 19-28 km/h (moderate breeze)');
     } else if (windSpeed < 38) {
       // Fresh breeze: quite active
       baseStreakCount = subtleMode ? 50 : 75;
+      print('[WindFlowOverlay] Wind range: 28-38 km/h (fresh breeze)');
     } else {
       // Strong winds: very active animation
       baseStreakCount = subtleMode ? 75 : 120;
+      print('[WindFlowOverlay] Wind range: > 38 km/h (strong winds)');
     }
     
     // Add minimal variation based on exact wind speed
@@ -300,9 +307,9 @@ class WindStreakManager {
     } else if (windSpeed < 11) {
       spawnInterval = subtleMode ? 0.2 : 0.15; // Moderate for light breeze
     } else if (windSpeed < 19) {
-      spawnInterval = subtleMode ? 0.15 : 0.1; // Gentle breeze rate
+      spawnInterval = subtleMode ? 0.2 : 0.1; // Slower for gentle breeze subtle mode
     } else if (windSpeed < 28) {
-      spawnInterval = subtleMode ? 0.1 : 0.08; // Moderate breeze
+      spawnInterval = subtleMode ? 0.3 : 0.08; // Much slower spawn for moderate winds in subtle mode
     } else if (windSpeed < 38) {
       spawnInterval = subtleMode ? 0.08 : 0.05; // Fresh breeze
     } else {

@@ -139,7 +139,7 @@ class HomeDashboard extends StatelessWidget {
                                           return WindFlowOverlay(
                                             windDirection: windDirection,
                                             windSpeed: windSpeedKmh,
-                                            subtleMode: windSpeedKmh < 25, // Increased threshold - subtle mode for winds under 25 km/h
+                                            subtleMode: windSpeedKmh < 30, // Further increased threshold - subtle mode for winds under 30 km/h
                                           );
                                         } catch (e) {
                                           // Fallback: return empty container if wind animation fails
