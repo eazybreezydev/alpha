@@ -22,17 +22,45 @@ class _NotificationTestScreenState extends State<NotificationTestScreen> {
   }
 
   void _loadToken() async {
+    setState(() {
+      _isLoading = true;
+    });
+    
     try {
-      final token = await FirebaseMessagingService.getToken();
-      setState(() {
-        _fcmToken = token;
-        _isLoading = false;
-      });
+      print('🔍 Loading FCM token for notification test screen...');
+      
+      // Check if Firebase is initialized
+      if (!FirebaseMessagingService.isInitialized()) {
+        print('❌ Firebase not initialized');
+        setState(() {
+          _fcmToken = 'Firebase not initialized';
+          _isLoading = false;
+        });
+        return;
+      }
+      
+      // Try to get token with retries
+      final token = await FirebaseMessagingService.getToken(maxRetries: 5);
+      if (token != null && token.isNotEmpty) {
+        print('✅ FCM token loaded successfully');
+        setState(() {
+          _fcmToken = token;
+          _isLoading = false;
+        });
+      } else {
+        print('⚠️ Real FCM token failed, using test token');
+        final testToken = await FirebaseMessagingService.getTestToken();
+        setState(() {
+          _fcmToken = testToken;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
+      print('❌ Error loading FCM token: $e');
       setState(() {
+        _fcmToken = 'Error: $e';
         _isLoading = false;
       });
-      print('Error loading FCM token: $e');
     }
   }
 

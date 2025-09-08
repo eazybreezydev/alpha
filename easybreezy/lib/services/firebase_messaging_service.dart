@@ -70,6 +70,17 @@ class FirebaseMessagingService {
   static final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
   static Function(NotificationData)? _onNotificationReceived;
   static Function(NotificationData)? _onNotificationTapped;
+  static String? _cachedToken; // Cache for FCM token
+
+  /// Check if Firebase is initialized
+  static bool isInitialized() {
+    try {
+      return Firebase.apps.isNotEmpty;
+    } catch (e) {
+      print('❌ Error checking Firebase initialization: $e');
+      return false;
+    }
+  }
 
   /// Initialize Firebase Messaging
   static Future<void> initialize() async {
@@ -130,6 +141,12 @@ class FirebaseMessagingService {
         final notificationData = NotificationData.fromRemoteMessage(initialMessage);
         _handleNotificationTap(notificationData);
       }
+
+      // Listen for token refresh
+      _firebaseMessaging.onTokenRefresh.listen((newToken) {
+        print('🔄 FCM Token refreshed: ${newToken.substring(0, 20)}...');
+        _cachedToken = newToken; // Update cached token
+      });
 
       // Subscribe to default topics
       await _subscribeToDefaultTopics();
@@ -237,6 +254,37 @@ class FirebaseMessagingService {
   }) {
     _onNotificationReceived = onReceived;
     _onNotificationTapped = onTapped;
+  }
+
+  /// Check if notifications are enabled
+  static Future<bool> areNotificationsEnabled() async {
+    try {
+      final settings = await _firebaseMessaging.getNotificationSettings();
+      return settings.authorizationStatus == AuthorizationStatus.authorized;
+    } catch (e) {
+      print('❌ Error checking notification permissions: $e');
+      return false;
+    }
+  }
+
+  /// Open device notification settings
+  static Future<void> openNotificationSettings() async {
+    try {
+      // On iOS, this will open the app's notification settings in the Settings app
+      // On Android, this would open notification settings (requires additional package)
+      await _firebaseMessaging.requestPermission(
+        alert: true,
+        announcement: false,
+        badge: true,
+        carPlay: false,
+        criticalAlert: false,
+        provisional: false,
+        sound: true,
+      );
+      print('🔔 Opened notification settings request');
+    } catch (e) {
+      print('❌ Error opening notification settings: $e');
+    }
   }
 
   /// Send a test notification (for development)
@@ -417,14 +465,51 @@ class FirebaseMessagingService {
     }
   }
 
-  /// Get the FCM token
-  static Future<String?> getToken() async {
+  /// Get the FCM token with retry logic
+  static Future<String?> getToken({int maxRetries = 3}) async {
     try {
-      return await _firebaseMessaging.getToken();
+      // Return cached token if available
+      if (_cachedToken != null) {
+        print('📋 Returning cached FCM token: ${_cachedToken!.substring(0, 20)}...');
+        return _cachedToken;
+      }
+
+      for (int attempt = 1; attempt <= maxRetries; attempt++) {
+        print('🔄 Getting FCM token (attempt $attempt/$maxRetries)...');
+        
+        try {
+          final token = await _firebaseMessaging.getToken();
+          
+          if (token != null) {
+            print('✅ FCM token obtained: ${token.substring(0, 20)}...');
+            _cachedToken = token; // Cache the token
+            return token;
+          } else {
+            print('❌ FCM token is null on attempt $attempt');
+          }
+        } catch (e) {
+          print('❌ Error getting FCM token on attempt $attempt: $e');
+        }
+
+        // Wait before retrying (except on last attempt)
+        if (attempt < maxRetries) {
+          await Future.delayed(Duration(seconds: attempt));
+        }
+      }
+      
+      print('❌ Failed to get FCM token after $maxRetries attempts');
+      return null;
     } catch (e) {
-      print('Error getting FCM token: $e');
+      print('❌ Error in getToken with retries: $e');
       return null;
     }
+  }
+
+  /// Get test token for development
+  static Future<String?> getTestToken() async {
+    final testToken = 'test_token_${DateTime.now().millisecondsSinceEpoch}';
+    print('🧪 Using test FCM token: $testToken');
+    return testToken;
   }
 
   /// Subscribe to a topic

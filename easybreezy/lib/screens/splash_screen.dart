@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/home_provider.dart';
+import '../providers/notification_provider.dart';
 import 'onboarding_screen.dart';
 import 'main_shell.dart';
 
@@ -26,6 +27,16 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted) return;
     
     final homeProvider = Provider.of<HomeProvider>(context, listen: false);
+    final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
+    
+    // Initialize notification provider
+    try {
+      print('🔔 Initializing NotificationProvider...');
+      await notificationProvider.initialize();
+      print('✅ NotificationProvider initialized successfully');
+    } catch (e) {
+      print('❌ Error initializing NotificationProvider: $e');
+    }
     
     // Wait for HomeProvider to be initialized (load saved data)
     while (!homeProvider.isInitialized) {

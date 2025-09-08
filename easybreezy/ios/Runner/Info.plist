@@ -45,5 +45,22 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	
+	<!-- Firebase Messaging -->
+	<key>FirebaseMessagingAutoInitEnabled</key>
+	<true/>
+	
+	<!-- Background App Refresh -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>background-fetch</string>
+		<string>remote-notification</string>
+	</array>
+	
+	<!-- Location Permission (fixing the error from terminal logs) -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>EasyBreezy uses your location to provide accurate weather data and wind forecasts for your area.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>EasyBreezy uses your location to provide accurate weather data and wind forecasts for your area.</string>
 </dict>
 </plist>

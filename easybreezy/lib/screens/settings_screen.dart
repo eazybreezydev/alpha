@@ -7,6 +7,7 @@ import '../models/home_config.dart';
 import '../widgets/wind_flow_animation.dart'; // Import new wind flow system
 import '../services/auto_refresh_service.dart';
 import 'notification_test_screen.dart';
+import 'notifications_settings_screen.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:math' as math;
@@ -616,6 +617,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   _notificationsEnabled = value;
                                   _disableAllNotifications = !value;
                                 });
+                              },
+                            ),
+                            
+                            // Firebase Notifications Settings
+                            const Divider(),
+                            ListTile(
+                              leading: const Icon(Icons.notifications_active, color: Colors.blue),
+                              title: const Text(
+                                'Notification Preferences',
+                                style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600),
+                              ),
+                              subtitle: const Text(
+                                'Configure Firebase push notifications and preferences',
+                                style: TextStyle(color: Colors.black87),
+                              ),
+                              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const NotificationsSettingsScreen(),
+                                  ),
+                                );
                               },
                             ),
                             
