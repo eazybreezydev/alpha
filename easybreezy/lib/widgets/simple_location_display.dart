@@ -5,7 +5,7 @@ import '../providers/location_provider.dart';
 import '../providers/weather_provider.dart';
 import '../providers/home_provider.dart';
 import '../models/location_model.dart';
-import '../widgets/add_location_modal.dart';
+import '../widgets/enhanced_add_location_modal.dart';
 
 class SimpleLocationDisplay extends StatelessWidget {
   final Color textColor;
@@ -157,7 +157,7 @@ class SimpleLocationDisplay extends StatelessWidget {
     final locationProvider = Provider.of<LocationProvider>(context, listen: false);
     final weatherProvider = Provider.of<WeatherProvider>(context, listen: false);
     
-    showAddLocationModal(context, (LocationModel newLocation) {
+    showEnhancedAddLocationModal(context, (LocationModel newLocation) {
       // This callback is now executed AFTER the modal closes, so context should be safe
       _handleLocationAdded(context, newLocation, locationProvider, weatherProvider);
     });

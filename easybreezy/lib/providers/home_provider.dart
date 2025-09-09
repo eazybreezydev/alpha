@@ -10,12 +10,14 @@ class HomeProvider extends ChangeNotifier {
   bool _isCelsius = true;
   bool _isPremiumUser = false; // Add premium status
   bool _isInitialized = false; // Track initialization status
+  String? _selectedCountry; // Add country field
 
   HomeConfig get homeConfig => _homeConfig;
   bool get isOnboardingCompleted => _isOnboardingCompleted;
   bool get isCelsius => _isCelsius;
   bool get isPremiumUser => _isPremiumUser; // Getter for premium status
   bool get isInitialized => _isInitialized; // Getter for initialization status
+  String? get selectedCountry => _selectedCountry; // Getter for country
 
   // Constructor loads data from shared preferences when initialized
   HomeProvider() {
@@ -36,6 +38,8 @@ class HomeProvider extends ChangeNotifier {
     final onboardingCompleted = prefs.getBool('onboardingCompleted') ?? false;
     final isCelsiusPref = prefs.getBool('isCelsius');
     final isPremiumPref = prefs.getBool('isPremiumUser') ?? false; // Load premium status
+    final selectedCountryPref = prefs.getString('selectedCountry'); // Load country
+    print('DEBUG: HomeProvider loading country from SharedPreferences: $selectedCountryPref');
     
     if (homeConfigJson != null) {
       try {
@@ -54,6 +58,8 @@ class HomeProvider extends ChangeNotifier {
     
     _isOnboardingCompleted = onboardingCompleted;
     _isPremiumUser = isPremiumPref; // Set premium status
+    _selectedCountry = selectedCountryPref; // Set country
+    print('DEBUG: HomeProvider set selectedCountry to: $_selectedCountry');
     if (isCelsiusPref != null) {
       _isCelsius = isCelsiusPref;
     }
@@ -77,6 +83,9 @@ class HomeProvider extends ChangeNotifier {
     await prefs.setBool('onboardingCompleted', _isOnboardingCompleted);
     await prefs.setBool('isCelsius', _isCelsius);
     await prefs.setBool('isPremiumUser', _isPremiumUser); // Save premium status
+    if (_selectedCountry != null) {
+      await prefs.setString('selectedCountry', _selectedCountry!); // Save country
+    }
   }
 
   // Update home orientation
@@ -158,6 +167,15 @@ class HomeProvider extends ChangeNotifier {
     _homeConfig = _homeConfig.copyWith(address: address, latitude: latitude, longitude: longitude);
     _saveHomeConfig();
     notifyListeners();
+  }
+
+  // Update selected country
+  void updateCountry(String country) {
+    print('DEBUG: HomeProvider updateCountry called with: $country');
+    _selectedCountry = country;
+    _saveHomeConfig();
+    notifyListeners();
+    print('DEBUG: HomeProvider selectedCountry updated to: $_selectedCountry');
   }
 
   // Upgrade to premium

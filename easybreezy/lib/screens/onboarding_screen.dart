@@ -30,6 +30,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   // Address-related state variables
   late String _address;
   late TextEditingController _addressController;
+  String? _selectedCountry;
   static const String kGoogleApiKey = 'AIzaSyBmZfcpnFKGRr2uzcL3ayXxUN-_fX6fy7s';
   List<String> _addressSuggestions = [];
   bool _isLoadingSuggestions = false;
@@ -55,8 +56,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       bool canProceed = true;
       String errorMessage = '';
       
+      // Check if country is selected
+      if (_selectedCountry == null) {
+        canProceed = false;
+        errorMessage = 'Please select your country';
+      }
       // Check if address is filled
-      if (_address.trim().isEmpty) {
+      else if (_address.trim().isEmpty) {
         canProceed = false;
         errorMessage = 'Please enter your home address';
       }
@@ -250,6 +256,114 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ),
           const SizedBox(height: 24),
+          
+          // Country Selection Section
+          Card(
+            elevation: 4,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            color: Colors.white,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Text(
+                        'Country',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      Text(
+                        ' *',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: Colors.grey),
+                    ),
+                    child: DropdownButtonFormField<String>(
+                      value: _selectedCountry,
+                      decoration: const InputDecoration(
+                        labelText: 'Select your country',
+                        labelStyle: TextStyle(color: Colors.black87),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                        prefixIcon: Icon(Icons.flag, color: Colors.grey),
+                      ),
+                      items: [
+                        DropdownMenuItem(
+                          value: 'US',
+                          child: Row(
+                            children: [
+                              Text('🇺🇸', style: TextStyle(fontSize: 20)),
+                              const SizedBox(width: 8),
+                              const Text('United States'),
+                            ],
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: 'CA',
+                          child: Row(
+                            children: [
+                              Text('🇨🇦', style: TextStyle(fontSize: 20)),
+                              const SizedBox(width: 8),
+                              const Text('Canada'),
+                            ],
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: 'GB',
+                          child: Row(
+                            children: [
+                              Text('🇬🇧', style: TextStyle(fontSize: 20)),
+                              const SizedBox(width: 8),
+                              const Text('United Kingdom'),
+                            ],
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: 'IE',
+                          child: Row(
+                            children: [
+                              Text('🇮🇪', style: TextStyle(fontSize: 20)),
+                              const SizedBox(width: 8),
+                              const Text('Ireland'),
+                            ],
+                          ),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedCountry = value;
+                        });
+                        print('Selected country: $value');
+                      },
+                      hint: Row(
+                        children: [
+                          Text('🌍', style: TextStyle(fontSize: 20)),
+                          const SizedBox(width: 8),
+                          const Text('Choose your country'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
           
           // Home Address Section
           Card(
@@ -769,10 +883,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     setState(() {
       _isLoadingSuggestions = true;
     });
-    final url = Uri.parse(
-      'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${Uri.encodeComponent(input)}&types=address&key=$kGoogleApiKey',
-    );
-    final response = await http.get(url);
+    
+    // Build URL with country filtering if a country is selected
+    String url = 'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${Uri.encodeComponent(input)}&types=address&key=$kGoogleApiKey';
+    
+    // Add country restriction if country is selected
+    if (_selectedCountry != null) {
+      url += '&components=country:$_selectedCountry';
+    }
+    
+    final response = await http.get(Uri.parse(url));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       setState(() {
@@ -790,10 +910,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Future<Map<String, double>?> _fetchPlaceCoordinates(String address) async {
-    final autocompleteUrl = Uri.parse(
-      'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${Uri.encodeComponent(address)}&types=address&key=$kGoogleApiKey',
-    );
-    final autocompleteResponse = await http.get(autocompleteUrl);
+    // Build URL with country filtering if a country is selected
+    String autocompleteUrl = 'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${Uri.encodeComponent(address)}&types=address&key=$kGoogleApiKey';
+    
+    // Add country restriction if country is selected
+    if (_selectedCountry != null) {
+      autocompleteUrl += '&components=country:$_selectedCountry';
+    }
+    
+    final autocompleteResponse = await http.get(Uri.parse(autocompleteUrl));
     if (autocompleteResponse.statusCode == 200) {
       final data = json.decode(autocompleteResponse.body);
       if (data['predictions'] != null && data['predictions'].isNotEmpty) {
@@ -924,6 +1049,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     // Save configuration and complete onboarding
     final homeProvider = Provider.of<HomeProvider>(context, listen: false);
     homeProvider.updateHomeOrientation(_selectedOrientation!); // Safe to use ! since we validated it exists
+    
+    // Save the selected country
+    if (_selectedCountry != null) {
+      homeProvider.updateCountry(_selectedCountry!);
+    }
     
     // Assume all sides have windows since we removed the selection
     final allWindows = {
