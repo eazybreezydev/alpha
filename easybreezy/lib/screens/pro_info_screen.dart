@@ -5,6 +5,7 @@ import '../providers/smart_home_provider.dart';
 import '../widgets/premium_upgrade_banner.dart';
 import 'trusted_partners_page.dart';
 import 'legal_screen.dart';
+import 'feedback_screen.dart';
 
 class ProInfoScreen extends StatelessWidget {
   const ProInfoScreen({Key? key}) : super(key: key);
@@ -91,6 +92,18 @@ class ProInfoScreen extends StatelessWidget {
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) => const TrustedPartnersPage(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 18),
+            ProInfoButton(
+              label: 'Feedback',
+              icon: Icons.feedback,
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const FeedbackScreen(),
                   ),
                 );
               },
