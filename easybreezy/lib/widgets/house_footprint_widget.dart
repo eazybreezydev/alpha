@@ -457,8 +457,8 @@ class _SatelliteMapBackground extends StatelessWidget {
     final lat = coordinates['lat']?.toStringAsFixed(6);
     final lng = coordinates['lng']?.toStringAsFixed(6);
     final mapUrl = 'https://maps.googleapis.com/maps/api/staticmap?'
-        'center=$lat,$lng&'
-        'zoom=19&'
+    'center=$lat,$lng&'
+    'zoom=20&'
         'size=300x300&'
         'scale=2&'
         'maptype=satellite&'
