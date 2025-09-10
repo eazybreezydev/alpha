@@ -15,6 +15,7 @@ import '../widgets/simple_location_display.dart'; // Import SimpleLocationDispla
 import '../models/easy_flow_score_model.dart'; // Import EasyFlowScoreModel
 import '../models/energy_estimation_model.dart'; // Import EnergyEstimationModel
 import '../models/air_quality_data.dart'; // Import AirQualityData
+import '../widgets/outdoor_widget.dart'; // Import OutdoorWidget
 
 class HomeDashboard extends StatelessWidget {
   const HomeDashboard({Key? key}) : super(key: key);
@@ -60,6 +61,31 @@ class HomeDashboard extends StatelessWidget {
         final pollenLevel = 'Low';
         final pollenColor = Colors.green;
 
+          // Map weather data for OutdoorWidget
+          final outdoorData = {
+            'airQuality': {
+              'level': (airQuality?.category ?? '').toLowerCase(),
+              'status': airQuality?.category ?? 'Unknown',
+            },
+            'uv': {
+              // TODO: Replace with real UV index from weatherData when available
+              'level': 'low',
+              'status': 'Unknown',
+            },
+            'pollen': {
+              'level': pollenLevel.toLowerCase(),
+              'status': pollenLevel,
+            },
+            'bugs': {
+              'level': 'low', // TODO: Replace with real bug risk
+              'status': 'Low Risk',
+            },
+            'health': {
+              'level': 'low', // TODO: Replace with real health risk
+              'status': 'Low Risk',
+            },
+          };
+
         return Scaffold(
           backgroundColor: Colors.transparent,
           body: Container(
@@ -102,7 +128,7 @@ class HomeDashboard extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 8), // Reduced spacing from 24 to 8
+                        // ...existing code...
                       // Main content (no Center widget)
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -205,6 +231,7 @@ class HomeDashboard extends StatelessWidget {
                             const SizedBox(height: 24),
                             // Add LocalAdsWidget above tips
                             const LocalAdsWidget(),
+                            OutdoorWidget(weatherData: outdoorData),
                             const SizedBox(height: 24),
                             // Energy Estimation Widget
                             if (weatherData != null)
