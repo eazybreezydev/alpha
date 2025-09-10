@@ -11,6 +11,7 @@ import 'notifications_settings_screen.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:math' as math;
+import '../widgets/multi_window_picker_widget.dart' show MultiWindowPickerWidget, WindowDirection;
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -449,6 +450,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   children: [
                   const SizedBox(height: 16),
+                  // Window Selection Section
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Card(
+                      elevation: 8,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      color: Colors.white,
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Window Directions',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Select which sides of your home have windows. This helps us recommend the best breeze setup.',
+                              style: TextStyle(color: Colors.blueGrey, fontSize: 13),
+                            ),
+                            const SizedBox(height: 12),
+                            MultiWindowPickerWidget(
+                              selectedWindows: _selectedWindows.entries
+                                  .where((e) => e.value)
+                                  .map((e) => e.key)
+                                  .toSet(),
+                              onChanged: (selected) {
+                                setState(() {
+                                  for (var dir in WindowDirection.values) {
+                                    _selectedWindows[dir] = selected.contains(dir);
+                                  }
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                   
                   // Auto-Refresh Section
                   Padding(

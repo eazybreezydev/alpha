@@ -1,3 +1,11 @@
+
+import 'dart:math';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import '../config/api_keys.dart';
+import '../models/home_config.dart';
+
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -23,6 +31,22 @@ class HouseFootprintWidget extends StatefulWidget {
 }
 
 class _HouseFootprintWidgetState extends State<HouseFootprintWidget> with TickerProviderStateMixin {
+  String _getPrimaryOrientationLabel() {
+    // Use street_facing from _buildingData if available
+    final streetFacing = _buildingData?['street_facing']?.toString().toLowerCase();
+    switch (streetFacing) {
+      case 'north':
+        return 'North';
+      case 'east':
+        return 'East';
+      case 'south':
+        return 'South';
+      case 'west':
+        return 'West';
+      default:
+        return 'North';
+    }
+  }
   late AnimationController _rotationController;
   late AnimationController _pulseController;
   late Animation<double> _rotationAnimation;
@@ -165,6 +189,30 @@ class _HouseFootprintWidgetState extends State<HouseFootprintWidget> with Ticker
         final data = json.decode(response.body);
         // Process street data to determine building orientation
         _houseRotation = _buildingData?['estimated_orientation'] ?? 0.0;
+
+        // Smart default: auto-select window zone based on street orientation
+        WindowDirection? detectedDirection;
+        // Use street_facing from _buildingData if available
+        final streetFacing = _buildingData?['street_facing']?.toString().toLowerCase();
+        switch (streetFacing) {
+          case 'north':
+            detectedDirection = WindowDirection.north;
+            break;
+          case 'east':
+            detectedDirection = WindowDirection.east;
+            break;
+          case 'south':
+            detectedDirection = WindowDirection.south;
+            break;
+          case 'west':
+            detectedDirection = WindowDirection.west;
+            break;
+        }
+        if (detectedDirection != null && mounted) {
+          setState(() {
+            _selectedSides = {detectedDirection!};
+          });
+        }
       }
     } catch (e) {
       print('Error detecting street facing side: $e');
@@ -229,7 +277,7 @@ class _HouseFootprintWidgetState extends State<HouseFootprintWidget> with Ticker
           children: [
             // Title
             const Text(
-              "Here's your house",
+              'TEST - Select Window Location',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -246,6 +294,34 @@ class _HouseFootprintWidgetState extends State<HouseFootprintWidget> with Ticker
               ),
             ),
             const SizedBox(height: 20),
+            // Smart default note for window zones
+            // Dynamic badge for detected primary facing windows
+            Center(
+              child: Container(
+                margin: const EdgeInsets.symmetric(vertical: 8.0),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade100,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.green.shade300),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      "Primary facing windows: ${_getPrimaryOrientationLabel()}",
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: Colors.green,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
             
             // House Footprint Display
             if (_isLoading) ...[
@@ -447,18 +523,6 @@ class _HouseFootprintPainter extends CustomPainter {
     _drawInteractiveSide(canvas, houseRect, WindowDirection.east, Colors.green);
     _drawInteractiveSide(canvas, houseRect, WindowDirection.west, Colors.purple);
     
-    // Draw roof peak indicator
-    final roofPaint = Paint()
-      ..color = Colors.red
-      ..style = PaintingStyle.fill;
-    
-    final roofPath = Path()
-      ..moveTo(houseRect.left + 20, houseRect.top)
-      ..lineTo(houseRect.right - 20, houseRect.top)
-      ..lineTo(center.dx, houseRect.top - 20)
-      ..close();
-    
-    canvas.drawPath(roofPath, roofPaint);
   }
 
   void _drawInteractiveSide(Canvas canvas, Rect houseRect, WindowDirection side, Color color) {

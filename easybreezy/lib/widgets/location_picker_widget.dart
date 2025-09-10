@@ -32,6 +32,12 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
   String _address = '';
   Map<String, double>? _selectedCoords;
   HomeOrientation _selectedOrientation = HomeOrientation.north;
+  Map<WindowDirection, bool> _selectedWindows = {
+    WindowDirection.north: false,
+    WindowDirection.east: false,
+    WindowDirection.south: false,
+    WindowDirection.west: false,
+  };
 
   @override
   void initState() {
@@ -212,7 +218,7 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
         // Show map if we have coordinates
         if (_selectedCoords != null && _address.isNotEmpty) ...[
           const SizedBox(height: 16),
-          // Static Map Preview
+          // Static Map Preview with window selection overlay
           Center(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
@@ -230,6 +236,7 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
+                    // Satellite map
                     Builder(
                       builder: (context) {
                         final lat = _selectedCoords!['lat']?.toStringAsFixed(6);
@@ -255,19 +262,154 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
                         );
                       },
                     ),
-                    // Compass overlay
-                    Positioned.fill(
-                      child: IgnorePointer(
+                    // House outline overlay
+                    Positioned(
+                      left: 70,
+                      top: 30,
+                      child: SizedBox(
+                        width: 180,
+                        height: 120,
                         child: CustomPaint(
-                          painter: _CompassPainter(),
+                          painter: _HouseOutlinePainter(),
                         ),
                       ),
                     ),
+                    // Window zones (N/E/S/W)
+                    ...WindowDirection.values.map((dir) {
+                      final pos = _getZonePositionMap(dir);
+                      final selected = _selectedWindows[dir] ?? false;
+                      return Positioned(
+                        left: pos.dx,
+                        top: pos.dy,
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedWindows[dir] = !selected;
+                            });
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: selected ? Colors.blueAccent : Colors.white,
+                              border: Border.all(
+                                color: selected ? Colors.blue : Colors.grey,
+                                width: 2,
+                              ),
+                              shape: BoxShape.circle,
+                              boxShadow: selected
+                                  ? [BoxShadow(color: Colors.blue.withOpacity(0.2), blurRadius: 8)]
+                                  : [],
+                            ),
+                            child: Center(
+                              child: Icon(
+                                Icons.window,
+                                color: selected ? Colors.white : Colors.blueGrey,
+                                size: 18,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                    // Direction labels
+                    ...WindowDirection.values.map((dir) {
+                      final pos = _getLabelPositionMap(dir);
+                      return Positioned(
+                        left: pos.dx,
+                        top: pos.dy,
+                        child: Text(
+                          _getDirectionSymbol(dir),
+                          style: TextStyle(
+                            color: Colors.black87,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      );
+                    }),
+                    // Cross-breeze feedback
+                    if (_isCrossBreezeEnabled())
+                      Positioned(
+                        bottom: 10,
+                        left: 0,
+                        right: 0,
+                        child: Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade100,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: const Text(
+                              'Cross-breeze enabled!',
+                              style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
             ),
           ),
+  // Map overlay positions for window zones
+  Offset _getZonePositionMap(WindowDirection dir) {
+    switch (dir) {
+      case WindowDirection.north:
+        return const Offset(150, 35);
+      case WindowDirection.east:
+        return const Offset(220, 80);
+      case WindowDirection.south:
+        return const Offset(150, 120);
+      case WindowDirection.west:
+        return const Offset(80, 80);
+    }
+  }
+
+  Offset _getLabelPositionMap(WindowDirection dir) {
+    switch (dir) {
+      case WindowDirection.north:
+        return const Offset(158, 20);
+      case WindowDirection.east:
+        return const Offset(240, 80);
+      case WindowDirection.south:
+        return const Offset(158, 140);
+      case WindowDirection.west:
+        return const Offset(60, 80);
+    }
+  }
+
+  bool _isCrossBreezeEnabled() {
+    final selected = _selectedWindows.entries.where((e) => e.value).map((e) => e.key).toSet();
+    if (selected.contains(WindowDirection.north) && selected.contains(WindowDirection.south)) return true;
+    if (selected.contains(WindowDirection.east) && selected.contains(WindowDirection.west)) return true;
+    return false;
+  }
+
+// House outline painter for overlay
+class _HouseOutlinePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.grey.shade300.withOpacity(0.7)
+      ..style = PaintingStyle.fill;
+    // Draw rectangle (house body)
+    final rect = Rect.fromLTWH(40, 40, 100, 60);
+    canvas.drawRect(rect, paint);
+    // Draw triangle (roof)
+    final roof = Path()
+      ..moveTo(40, 40)
+      ..lineTo(90, 10)
+      ..lineTo(140, 40)
+      ..close();
+    canvas.drawPath(roof, paint..color = Colors.grey.shade400.withOpacity(0.7));
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
           const SizedBox(height: 12),
           // Orientation Picker
           _OrientationPicker(
@@ -385,67 +527,149 @@ class _OrientationPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Container(
-        width: 120,
-        height: 120,
+      child: SizedBox(
+        width: 180,
+        height: 180,
         child: Stack(
           children: [
-            // Center house icon
-            Center(
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade100,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue.shade300),
-                ),
-                child: const Icon(
-                  Icons.home,
-                  color: Colors.blue,
-                  size: 24,
-                ),
-              ),
+            // House outline overlay
+            CustomPaint(
+              size: const Size(180, 180),
+              painter: _HouseOutlinePainter(),
             ),
-            // Direction buttons
-            ...HomeOrientation.values.map((orientation) {
-              final angle = _getAngleForOrientation(orientation);
-              final isSelected = selected == orientation;
-              
+            // Window zones (N/E/S/W)
+            ...WindowDirection.values.map((dir) {
+              final pos = _getZonePosition(dir);
+              final selected = _selectedWindows[dir] ?? false;
               return Positioned(
-                left: 60 + 35 * cos(angle - pi / 2) - 15,
-                top: 60 + 35 * sin(angle - pi / 2) - 15,
+                left: pos.dx,
+                top: pos.dy,
                 child: GestureDetector(
-                  onTap: () => onChanged(orientation),
-                  child: Container(
-                    width: 30,
-                    height: 30,
+                  onTap: () {
+                    setState(() {
+                      _selectedWindows[dir] = !selected;
+                    });
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: 36,
+                    height: 36,
                     decoration: BoxDecoration(
-                      color: isSelected ? Colors.blue : Colors.grey.shade200,
-                      shape: BoxShape.circle,
+                      color: selected ? Colors.blueAccent : Colors.white,
                       border: Border.all(
-                        color: isSelected ? Colors.blue.shade700 : Colors.grey.shade400,
+                        color: selected ? Colors.blue : Colors.grey,
                         width: 2,
                       ),
+                      shape: BoxShape.circle,
+                      boxShadow: selected
+                          ? [BoxShadow(color: Colors.blue.withOpacity(0.2), blurRadius: 8)]
+                          : [],
                     ),
                     child: Center(
-                      child: Text(
-                        _getOrientationSymbol(orientation),
-                        style: TextStyle(
-                          color: isSelected ? Colors.white : Colors.black87,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
+                      child: Icon(
+                        Icons.window,
+                        color: selected ? Colors.white : Colors.blueGrey,
+                        size: 20,
                       ),
                     ),
                   ),
                 ),
               );
-            }).toList(),
+            }),
+            // Direction labels
+            ...WindowDirection.values.map((dir) {
+              final pos = _getLabelPosition(dir);
+              return Positioned(
+                left: pos.dx,
+                top: pos.dy,
+                child: Text(
+                  _getDirectionSymbol(dir),
+                  style: TextStyle(
+                    color: Colors.black87,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+              );
+            }),
+            // Cross-breeze feedback
+            if (_isCrossBreezeEnabled())
+              Positioned(
+                bottom: 10,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade100,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Text(
+                      'Cross-breeze enabled!',
+                      style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
     );
+  Offset _getZonePosition(WindowDirection dir) {
+    switch (dir) {
+      case WindowDirection.north:
+        return const Offset(72, 10);
+      case WindowDirection.east:
+        return const Offset(140, 72);
+      case WindowDirection.south:
+        return const Offset(72, 140);
+      case WindowDirection.west:
+        return const Offset(10, 72);
+    }
+  }
+
+  Offset _getLabelPosition(WindowDirection dir) {
+    switch (dir) {
+      case WindowDirection.north:
+        return const Offset(80, 0);
+      case WindowDirection.east:
+        return const Offset(160, 80);
+      case WindowDirection.south:
+        return const Offset(80, 160);
+      case WindowDirection.west:
+        return const Offset(0, 80);
+    }
+  }
+
+  bool _isCrossBreezeEnabled() {
+    final selected = _selectedWindows.entries.where((e) => e.value).map((e) => e.key).toSet();
+    if (selected.contains(WindowDirection.north) && selected.contains(WindowDirection.south)) return true;
+    if (selected.contains(WindowDirection.east) && selected.contains(WindowDirection.west)) return true;
+    return false;
+  }
+// House outline painter for overlay
+class _HouseOutlinePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.grey.shade300.withOpacity(0.7)
+      ..style = PaintingStyle.fill;
+    // Draw rectangle (house body)
+    final rect = Rect.fromLTWH(40, 60, 100, 60);
+    canvas.drawRect(rect, paint);
+    // Draw triangle (roof)
+    final roof = Path()
+      ..moveTo(40, 60)
+      ..lineTo(90, 30)
+      ..lineTo(140, 60)
+      ..close();
+    canvas.drawPath(roof, paint..color = Colors.grey.shade400.withOpacity(0.7));
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
   }
 
   double _getAngleForOrientation(HomeOrientation orientation) {

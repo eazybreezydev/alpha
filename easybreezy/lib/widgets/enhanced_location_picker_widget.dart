@@ -183,9 +183,7 @@ class _EnhancedLocationPickerWidgetState extends State<EnhancedLocationPickerWid
           const SizedBox(height: 16),
         ],
         
-        // Progress indicator
-        _ProgressIndicator(currentStep: _currentStep),
-        const SizedBox(height: 24),
+  // ...existing code...
         
         // Page view for steps
         Expanded(
@@ -461,7 +459,7 @@ class _AddressInputStep extends StatelessWidget {
                 ),
               ),
               child: const Text(
-                'Continue to House Selection',
+                'Continue',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
             ),

@@ -21,6 +21,12 @@ class _AddLocationModalState extends State<AddLocationModal> {
   Map<String, double>? _selectedCoords;
   HomeOrientation _selectedOrientation = HomeOrientation.north;
   bool _isLocationValid = false;
+  Map<WindowDirection, bool> _selectedWindows = {
+    WindowDirection.north: false,
+    WindowDirection.east: false,
+    WindowDirection.south: false,
+    WindowDirection.west: false,
+  };
 
   @override
   void dispose() {
@@ -78,6 +84,7 @@ class _AddLocationModalState extends State<AddLocationModal> {
       orientation: _selectedOrientation,
       isHome: false,
       createdAt: DateTime.now(),
+      windows: Map.from(_selectedWindows), // Pass window selections
     );
 
     // Close the modal immediately and pass the location to the callback
