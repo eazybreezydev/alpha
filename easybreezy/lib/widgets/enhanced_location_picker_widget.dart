@@ -495,14 +495,12 @@ class _HouseSelectionStep extends StatelessWidget {
               icon: const Icon(Icons.arrow_back),
             ),
             const SizedBox(width: 8),
-            const Expanded(
-              child: Text(
-                'Select Window Locations',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
+            const Text(
+              'Select Window Orientation',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
               ),
             ),
           ],

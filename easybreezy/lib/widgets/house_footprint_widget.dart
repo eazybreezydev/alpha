@@ -275,16 +275,7 @@ class _HouseFootprintWidgetState extends State<HouseFootprintWidget> with Ticker
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Title
-            const Text(
-              'TEST - Select Window Location',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 6),
+            // ...existing code...
             const Text(
               "Which side has the biggest windows? Tap the front, back, or side.",
               textAlign: TextAlign.center,
