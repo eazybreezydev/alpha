@@ -19,17 +19,44 @@ class OutdoorWidget extends StatelessWidget {
   String _getStatusText(String type) {
   final status = weatherData[type]['status'];
   if (status == null) return '';
-  return status is String ? status : status.toString();
+  if (status is String) return status;
+  if (status is int || status is double) return status.toString();
+  return '';
   }
 
   @override
   Widget build(BuildContext context) {
     final rows = [
-      {'label': 'Air Quality', 'type': 'airQuality'},
-      {'label': 'UV', 'type': 'uv'},
-      {'label': 'Pollen', 'type': 'pollen'},
-      {'label': 'Bugs', 'type': 'bugs'},
-      {'label': 'Health', 'type': 'health'},
+      {
+        'label': 'Air Quality',
+        'type': 'airQuality',
+        'icon': Icons.air,
+        'iconColor': const Color(0xFF90CAF9), // pastel blue
+      },
+      {
+        'label': 'UV',
+        'type': 'uv',
+        'icon': Icons.wb_sunny,
+        'iconColor': const Color(0xFFFFF59D), // pastel yellow
+      },
+      {
+        'label': 'Pollen',
+        'type': 'pollen',
+        'icon': Icons.local_florist,
+        'iconColor': const Color(0xFFF8BBD0), // pastel pink
+      },
+      {
+        'label': 'Bugs',
+        'type': 'bugs',
+        'icon': Icons.bug_report,
+        'iconColor': const Color(0xFFC8E6C9), // pastel green
+      },
+      {
+        'label': 'Health',
+        'type': 'health',
+        'icon': Icons.favorite,
+        'iconColor': const Color(0xFFB3E5FC), // pastel sky
+      },
     ];
     return Card(
       color: Colors.white,
@@ -52,9 +79,15 @@ class OutdoorWidget extends StatelessWidget {
               children: [
                 Row(
                   children: [
+                    Icon(
+                      rows[i]['icon'] as IconData,
+                      color: rows[i]['iconColor'] as Color,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        rows[i]['label']!,
+                        rows[i]['label'] as String,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w500,
                         ),
@@ -65,7 +98,7 @@ class OutdoorWidget extends StatelessWidget {
                       height: 18,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: _getStatusColor(rows[i]['type']!),
+                          color: _getStatusColor(rows[i]['type'] as String),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -74,7 +107,7 @@ class OutdoorWidget extends StatelessWidget {
                     SizedBox(
                       width: 70,
                       child: Text(
-                        _getStatusText(rows[i]['type']!),
+                        _getStatusText(rows[i]['type'] as String),
                         textAlign: TextAlign.right,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Colors.grey[600],
