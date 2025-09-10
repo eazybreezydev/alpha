@@ -16,6 +16,7 @@ class WeatherProvider extends ChangeNotifier {
   WeatherData? _currentWeather;
   WeatherForecast? _forecast;
   AirQualityData? _airQuality;
+  double? _uvIndex;
   Position? _currentLocation;
   String? _city; // Added city property
   String? _province; // Add province/state property
@@ -42,6 +43,7 @@ class WeatherProvider extends ChangeNotifier {
   WeatherData? get currentWeather => _currentWeather;
   WeatherForecast? get forecast => _forecast;
   AirQualityData? get airQuality => _airQuality;
+  double? get uvIndex => _uvIndex;
   Position? get currentLocation => _currentLocation;
   String? get city => _city; // City getter
   String? get province => _province; // Province getter
@@ -187,17 +189,27 @@ class WeatherProvider extends ChangeNotifier {
         units: units,
       );
       print('[WeatherProvider] Weather data fetched: \\${weatherData.temperature}');
-      
+
       final forecastData = await _weatherService.getForecast(
         latitude,
         longitude,
         units: units,
       );
       print('[WeatherProvider] Forecast data fetched');
-      
+
+      // Fetch UV index data
+      try {
+        final uv = await _weatherService.getUvIndex(latitude, longitude);
+        print('[WeatherProvider] UV index fetched: $uv');
+        _uvIndex = uv;
+      } catch (uvError) {
+        print('[WeatherProvider] Failed to fetch UV index: \\${uvError.toString()}');
+        _uvIndex = null;
+      }
+
       // Store the units that were used to fetch this weather data
       _weatherDataUnits = units;
-      
+
       // Fetch air quality data
       try {
         final airQualityData = await _weatherService.getAirQuality(latitude, longitude);
@@ -207,7 +219,7 @@ class WeatherProvider extends ChangeNotifier {
         print('[WeatherProvider] Failed to fetch air quality data: \\${aqiError.toString()}');
         _airQuality = null;
       }
-      
+
       // TODO: Reactivate severe weather alerts fetching when API key is active
       // final alerts = await _weatherService.getSevereWeatherAlerts(
       //   position.latitude,
@@ -217,10 +229,10 @@ class WeatherProvider extends ChangeNotifier {
       _currentWeather = weatherData;
       _forecast = forecastData;
       // _alerts = alerts; // TODO: Reactivate when API key is active
-      
+
       // Generate wind forecast data
       generateWindForecast();
-      
+
       _isLoading = false;
       notifyListeners();
       // TODO: Reactivate severe weather notification when API key is active

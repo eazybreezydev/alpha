@@ -139,4 +139,25 @@ class WeatherService {
       throw Exception('Error fetching air quality data: $e');
     }
   }
+
+  // Get current UV index (OpenWeatherMap One Call API)
+  Future<double> getUvIndex(double lat, double lon) async {
+    final url = 'https://api.openweathermap.org/data/3.0/onecall?lat=$lat&lon=$lon&exclude=minutely,hourly,daily,alerts&appid=$apiKey';
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        // The UV index is in the 'current' object as 'uvi'
+        if (jsonData['current'] != null && jsonData['current']['uvi'] != null) {
+          return (jsonData['current']['uvi'] as num).toDouble();
+        } else {
+          throw Exception('No UV index data available');
+        }
+      } else {
+        throw Exception('Failed to load UV index data: \\${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching UV index data: $e');
+    }
+  }
 }

@@ -67,11 +67,20 @@ class HomeDashboard extends StatelessWidget {
               'level': (airQuality?.category ?? '').toLowerCase(),
               'status': airQuality?.category ?? 'Unknown',
             },
-            'uv': {
-              // TODO: Replace with real UV index from weatherData when available
-              'level': 'low',
-              'status': 'Unknown',
-            },
+      'uv': {
+        'level': (weatherProvider.uvIndex ?? 0) > 7
+          ? 'high'
+          : (weatherProvider.uvIndex ?? 0) > 3
+            ? 'medium'
+            : 'low',
+        'status': weatherProvider.uvIndex != null
+          ? (weatherProvider.uvIndex! > 7
+            ? 'High'
+            : weatherProvider.uvIndex! > 3
+              ? 'Moderate'
+              : 'Low')
+          : 'Unknown',
+      },
             'pollen': {
               'level': pollenLevel.toLowerCase(),
               'status': pollenLevel,
