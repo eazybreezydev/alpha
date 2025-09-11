@@ -159,19 +159,30 @@ class _EnhancedAddLocationModalState extends State<EnhancedAddLocationModal> {
                       controller: _nameController,
                       decoration: const InputDecoration(
                         hintText: 'e.g., Cottage, Office, Mom\'s House',
-                        border: OutlineInputBorder(),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                          borderSide: BorderSide(color: Colors.grey),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                          borderSide: BorderSide(color: Colors.blue, width: 2),
+                        ),
                         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
                       style: const TextStyle(color: Colors.black87),
                     ),
                     const SizedBox(height: 24),
                     
-                    // Enhanced location picker (single-step)
+                    // Enhanced location picker
                     Expanded(
                       child: Consumer<HomeProvider>(
                         builder: (context, homeProvider, child) {
+                          print('DEBUG: AddLocationModal - Country from HomeProvider: ${homeProvider.selectedCountry}');
                           return EnhancedLocationPickerWidget(
-                            selectedCountry: homeProvider.selectedCountry,
+                            selectedCountry: homeProvider.selectedCountry, // Use stored country
                             onLocationSelected: _onLocationSelected,
                             showTitle: false,
                           );

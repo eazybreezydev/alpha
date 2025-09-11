@@ -70,8 +70,10 @@ class OutdoorWidget extends StatelessWidget {
           children: [
             Text(
               'Air & Wellness',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              style: const TextStyle(
+                color: Colors.black,
                 fontWeight: FontWeight.bold,
+                fontSize: 20,
               ),
             ),
             const SizedBox(height: 16),

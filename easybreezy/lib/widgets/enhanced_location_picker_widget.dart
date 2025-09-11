@@ -482,23 +482,36 @@ class _HouseSelectionStep extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Title
-        const Text(
-          'Add Home Address & Select Windows',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-        ),
         const SizedBox(height: 16),
         // Address Input Field
+        const Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'Home Address',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
         TextField(
           controller: addressController,
-          decoration: InputDecoration(
-            labelText: 'Home Address',
-            hintText: 'Enter your home address',
-            suffixIcon: isLoadingSuggestions ? const CircularProgressIndicator() : null,
+          decoration: const InputDecoration(
+            hintText: '23 Main St',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(12)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(12)),
+              borderSide: BorderSide(color: Colors.grey),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(12)),
+              borderSide: BorderSide(color: Colors.blue, width: 2),
+            ),
+            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
           onChanged: onAddressChanged,
           onSubmitted: onAddressSubmitted,
@@ -507,11 +520,14 @@ class _HouseSelectionStep extends StatelessWidget {
         if (addressSuggestions.isNotEmpty)
           Container(
             margin: const EdgeInsets.only(top: 8),
-            child: Column(
-              children: addressSuggestions.map((suggestion) => ListTile(
-                title: Text(suggestion),
-                onTap: () => onSuggestionTapped(suggestion),
-              )).toList(),
+            constraints: const BoxConstraints(maxHeight: 200), // Limit dropdown height
+            child: SingleChildScrollView(
+              child: Column(
+                children: addressSuggestions.map((suggestion) => ListTile(
+                  title: Text(suggestion),
+                  onTap: () => onSuggestionTapped(suggestion),
+                )).toList(),
+              ),
             ),
           ),
         const SizedBox(height: 16),

@@ -250,6 +250,50 @@ class _HouseFootprintWidgetState extends State<HouseFootprintWidget> with Ticker
     }
   }
 
+  void _handleTapOnHouse(Offset localPosition, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final houseSize = Size(120, 100);
+    final houseRect = Rect.fromCenter(
+      center: center,
+      width: houseSize.width,
+      height: houseSize.height,
+    );
+
+    // Check which side was tapped
+    final relativePosition = localPosition - center;
+    
+    // Define tap zones for each side (extending beyond the house outline)
+    final tapZoneSize = 40.0; // Make tap zones larger for easier selection
+    
+    // Top side (North)
+    if (relativePosition.dy < -houseSize.height / 2 + tapZoneSize &&
+        relativePosition.dx.abs() < houseSize.width / 2 + tapZoneSize) {
+      _onSideSelected(WindowDirection.north);
+      return;
+    }
+    
+    // Bottom side (South)
+    if (relativePosition.dy > houseSize.height / 2 - tapZoneSize &&
+        relativePosition.dx.abs() < houseSize.width / 2 + tapZoneSize) {
+      _onSideSelected(WindowDirection.south);
+      return;
+    }
+    
+    // Left side (West)
+    if (relativePosition.dx < -houseSize.width / 2 + tapZoneSize &&
+        relativePosition.dy.abs() < houseSize.height / 2 + tapZoneSize) {
+      _onSideSelected(WindowDirection.west);
+      return;
+    }
+    
+    // Right side (East)
+    if (relativePosition.dx > houseSize.width / 2 - tapZoneSize &&
+        relativePosition.dy.abs() < houseSize.height / 2 + tapZoneSize) {
+      _onSideSelected(WindowDirection.east);
+      return;
+    }
+  }
+
   void _completeSelection() {
     if (_selectedSides.isEmpty) return;
     
@@ -277,7 +321,7 @@ class _HouseFootprintWidgetState extends State<HouseFootprintWidget> with Ticker
           children: [
             const SizedBox(height: 6),
             const Text(
-              "Which side has the biggest windows? Tap the front, back, or side.",
+              "We've auto-detected your primary window direction. If it looks off, just tap front, back, or sides to adjust.",
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
@@ -303,7 +347,7 @@ class _HouseFootprintWidgetState extends State<HouseFootprintWidget> with Ticker
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        "Primary facing windows: ${_getPrimaryOrientationLabel()}\nTap the side with the largest windows.",
+                        "${_getPrimaryOrientationLabel()}-facing windows detected\nTap the side with the largest windows.",
                         style: const TextStyle(
                           fontSize: 15,
                           color: Colors.green,
@@ -365,12 +409,18 @@ class _HouseFootprintWidgetState extends State<HouseFootprintWidget> with Ticker
                           child: LayoutBuilder(
                             builder: (context, constraints) {
                               final size = Size(constraints.maxWidth, constraints.maxHeight);
-                              return CustomPaint(
-                                size: size,
-                                painter: _HouseFootprintPainter(
-                                  selectedSides: _selectedSides,
-                                  pulseAnimation: _pulseAnimation,
-                                  onSideSelected: _onSideSelected,
+                              return GestureDetector(
+                                onTapUp: (details) {
+                                  final localPosition = details.localPosition;
+                                  _handleTapOnHouse(localPosition, size);
+                                },
+                                child: CustomPaint(
+                                  size: size,
+                                  painter: _HouseFootprintPainter(
+                                    selectedSides: _selectedSides,
+                                    pulseAnimation: _pulseAnimation,
+                                    onSideSelected: _onSideSelected,
+                                  ),
                                 ),
                               );
                             },
@@ -380,10 +430,10 @@ class _HouseFootprintWidgetState extends State<HouseFootprintWidget> with Ticker
                     ),
                     
                     // North indicator
-                    const Positioned(
+                    Positioned(
                       top: 16,
                       right: 16,
-                      child: _NorthIndicator(),
+                      child: _NorthIndicator(houseRotation: _houseRotation),
                     ),
                   ],
                 ),
@@ -616,7 +666,9 @@ class _HouseFootprintPainter extends CustomPainter {
 }
 
 class _NorthIndicator extends StatelessWidget {
-  const _NorthIndicator();
+  final double houseRotation;
+  
+  const _NorthIndicator({required this.houseRotation});
 
   @override
   Widget build(BuildContext context) {
@@ -626,16 +678,20 @@ class _NorthIndicator extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.9),
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.black26),
-      ),
-      child: const Center(
-        child: Text(
-          'N',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-            color: Colors.red,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
+        ],
+      ),
+      child: Transform.rotate(
+        angle: -houseRotation * (pi / 180), // Rotate compass opposite to house rotation
+        child: const Icon(
+          Icons.navigation,
+          color: Colors.red,
+          size: 24,
         ),
       ),
     );
