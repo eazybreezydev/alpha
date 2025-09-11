@@ -166,13 +166,12 @@ class _EnhancedAddLocationModalState extends State<EnhancedAddLocationModal> {
                     ),
                     const SizedBox(height: 24),
                     
-                    // Enhanced location picker
+                    // Enhanced location picker (single-step)
                     Expanded(
                       child: Consumer<HomeProvider>(
                         builder: (context, homeProvider, child) {
-                          print('DEBUG: AddLocationModal - Country from HomeProvider: ${homeProvider.selectedCountry}');
                           return EnhancedLocationPickerWidget(
-                            selectedCountry: homeProvider.selectedCountry, // Use stored country
+                            selectedCountry: homeProvider.selectedCountry,
                             onLocationSelected: _onLocationSelected,
                             showTitle: false,
                           );

@@ -275,7 +275,7 @@ class _HouseFootprintWidgetState extends State<HouseFootprintWidget> with Ticker
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ...existing code...
+            const SizedBox(height: 6),
             const Text(
               "Which side has the biggest windows? Tap the front, back, or side.",
               textAlign: TextAlign.center,
@@ -301,12 +301,17 @@ class _HouseFootprintWidgetState extends State<HouseFootprintWidget> with Ticker
                   children: [
                     const Icon(Icons.check_circle, color: Colors.green, size: 20),
                     const SizedBox(width: 8),
-                    Text(
-                      "Primary facing windows: ${_getPrimaryOrientationLabel()}",
-                      style: const TextStyle(
-                        fontSize: 15,
-                        color: Colors.green,
-                        fontWeight: FontWeight.bold,
+                    Expanded(
+                      child: Text(
+                        "Primary facing windows: ${_getPrimaryOrientationLabel()}\nTap the side with the largest windows.",
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: Colors.green,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 2,
+                        softWrap: true,
+                        overflow: TextOverflow.visible,
                       ),
                     ),
                   ],
@@ -448,8 +453,8 @@ class _SatelliteMapBackground extends StatelessWidget {
     final lat = coordinates['lat']?.toStringAsFixed(6);
     final lng = coordinates['lng']?.toStringAsFixed(6);
     final mapUrl = 'https://maps.googleapis.com/maps/api/staticmap?'
-    'center=$lat,$lng&'
-    'zoom=20&'
+        'center=$lat,$lng&'
+  'zoom=20&'
         'size=300x300&'
         'scale=2&'
         'maptype=satellite&'

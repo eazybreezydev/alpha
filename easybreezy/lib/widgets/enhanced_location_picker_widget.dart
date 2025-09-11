@@ -182,57 +182,39 @@ class _EnhancedLocationPickerWidgetState extends State<EnhancedLocationPickerWid
           ),
           const SizedBox(height: 16),
         ],
-        
-  // ...existing code...
-        
-        // Page view for steps
+        // Combined Address and Window Selection
         Expanded(
-          child: PageView(
-            controller: _pageController,
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              // Step 1: Address Input
-              _AddressInputStep(
-                addressController: _addressController,
-                address: _address,
-                selectedCoords: _selectedCoords,
-                addressSuggestions: _addressSuggestions,
-                isLoadingSuggestions: _isLoadingSuggestions,
-                onAddressChanged: (value) {
-                  setState(() => _address = value);
-                  _fetchAddressSuggestions(value);
-                },
-                onAddressSubmitted: (value) async {
-                  if (value.isNotEmpty && _selectedCoords == null) {
-                    final coords = await _fetchPlaceCoordinates(value);
-                    if (coords != null) {
-                      setState(() => _selectedCoords = coords);
-                    }
-                  }
-                },
-                onSuggestionTapped: (suggestion) async {
-                  setState(() {
-                    _address = suggestion;
-                    _addressController.text = suggestion;
-                    _addressSuggestions = [];
-                  });
-                  final coords = await _fetchPlaceCoordinates(suggestion);
-                  if (coords != null) {
-                    setState(() => _selectedCoords = coords);
-                  }
-                },
-                onContinue: _proceedToHouseSelection,
-              ),
-              
-              // Step 2: House Footprint Selection
-              if (_selectedCoords != null)
-                _HouseSelectionStep(
-                  address: _address,
-                  coordinates: _selectedCoords!,
-                  onSelectionComplete: _onHouseSelectionComplete,
-                  onBack: _goBackToAddressStep,
-                ),
-            ],
+          child: _HouseSelectionStep(
+            address: _address,
+            coordinates: _selectedCoords ?? {},
+            addressController: _addressController,
+            addressSuggestions: _addressSuggestions,
+            isLoadingSuggestions: _isLoadingSuggestions,
+            onAddressChanged: (value) {
+              setState(() => _address = value);
+              _fetchAddressSuggestions(value);
+            },
+            onAddressSubmitted: (value) async {
+              if (value.isNotEmpty) {
+                final coords = await _fetchPlaceCoordinates(value);
+                if (coords != null) {
+                  setState(() => _selectedCoords = coords);
+                }
+              }
+            },
+            onSuggestionTapped: (suggestion) async {
+              setState(() {
+                _address = suggestion;
+                _addressController.text = suggestion;
+                _addressSuggestions = [];
+              });
+              final coords = await _fetchPlaceCoordinates(suggestion);
+              if (coords != null) {
+                setState(() => _selectedCoords = coords);
+              }
+            },
+            onSelectionComplete: _onHouseSelectionComplete,
+            onBack: () {}, // Empty callback since we no longer need back navigation
           ),
         ),
       ],
@@ -472,14 +454,26 @@ class _AddressInputStep extends StatelessWidget {
 }
 
 class _HouseSelectionStep extends StatelessWidget {
+  final TextEditingController addressController;
   final String address;
   final Map<String, double> coordinates;
+  final List<String> addressSuggestions;
+  final bool isLoadingSuggestions;
+  final Function(String) onAddressChanged;
+  final Function(String) onAddressSubmitted;
+  final Function(String) onSuggestionTapped;
   final Function(List<WindowDirection>, HomeOrientation) onSelectionComplete;
   final VoidCallback onBack;
 
   const _HouseSelectionStep({
+    required this.addressController,
     required this.address,
     required this.coordinates,
+    required this.addressSuggestions,
+    required this.isLoadingSuggestions,
+    required this.onAddressChanged,
+    required this.onAddressSubmitted,
+    required this.onSuggestionTapped,
     required this.onSelectionComplete,
     required this.onBack,
   });
@@ -488,31 +482,72 @@ class _HouseSelectionStep extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Row(
-          children: [
-            IconButton(
-              onPressed: onBack,
-              icon: const Icon(Icons.arrow_back),
-            ),
-            const SizedBox(width: 8),
-            const Text(
-              'Select Window Orientation',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Expanded(
-          child: HouseFootprintWidget(
-            address: address,
-            coordinates: coordinates,
-            onSelectionComplete: onSelectionComplete,
+        // Title
+        const Text(
+          'Add Home Address & Select Windows',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
           ),
         ),
+        const SizedBox(height: 16),
+        // Address Input Field
+        TextField(
+          controller: addressController,
+          decoration: InputDecoration(
+            labelText: 'Home Address',
+            hintText: 'Enter your home address',
+            suffixIcon: isLoadingSuggestions ? const CircularProgressIndicator() : null,
+          ),
+          onChanged: onAddressChanged,
+          onSubmitted: onAddressSubmitted,
+        ),
+        // Address Suggestions
+        if (addressSuggestions.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.only(top: 8),
+            child: Column(
+              children: addressSuggestions.map((suggestion) => ListTile(
+                title: Text(suggestion),
+                onTap: () => onSuggestionTapped(suggestion),
+              )).toList(),
+            ),
+          ),
+        const SizedBox(height: 16),
+        // Satellite & Window Selection - Only show after valid address
+        if (coordinates.isNotEmpty && address.isNotEmpty)
+          Expanded(
+            child: HouseFootprintWidget(
+              address: address,
+              coordinates: coordinates,
+              onSelectionComplete: onSelectionComplete,
+            ),
+          )
+        else
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.location_on,
+                    size: 64,
+                    color: Colors.grey.shade400,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Enter your home address to see the satellite view',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey.shade600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
       ],
     );
   }
