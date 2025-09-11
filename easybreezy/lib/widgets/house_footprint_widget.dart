@@ -250,50 +250,6 @@ class _HouseFootprintWidgetState extends State<HouseFootprintWidget> with Ticker
     }
   }
 
-  void _handleTapOnHouse(Offset localPosition, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final houseSize = Size(120, 100);
-    final houseRect = Rect.fromCenter(
-      center: center,
-      width: houseSize.width,
-      height: houseSize.height,
-    );
-
-    // Check which side was tapped
-    final relativePosition = localPosition - center;
-    
-    // Define tap zones for each side (extending beyond the house outline)
-    final tapZoneSize = 40.0; // Make tap zones larger for easier selection
-    
-    // Top side (North)
-    if (relativePosition.dy < -houseSize.height / 2 + tapZoneSize &&
-        relativePosition.dx.abs() < houseSize.width / 2 + tapZoneSize) {
-      _onSideSelected(WindowDirection.north);
-      return;
-    }
-    
-    // Bottom side (South)
-    if (relativePosition.dy > houseSize.height / 2 - tapZoneSize &&
-        relativePosition.dx.abs() < houseSize.width / 2 + tapZoneSize) {
-      _onSideSelected(WindowDirection.south);
-      return;
-    }
-    
-    // Left side (West)
-    if (relativePosition.dx < -houseSize.width / 2 + tapZoneSize &&
-        relativePosition.dy.abs() < houseSize.height / 2 + tapZoneSize) {
-      _onSideSelected(WindowDirection.west);
-      return;
-    }
-    
-    // Right side (East)
-    if (relativePosition.dx > houseSize.width / 2 - tapZoneSize &&
-        relativePosition.dy.abs() < houseSize.height / 2 + tapZoneSize) {
-      _onSideSelected(WindowDirection.east);
-      return;
-    }
-  }
-
   void _completeSelection() {
     if (_selectedSides.isEmpty) return;
     
@@ -319,9 +275,18 @@ class _HouseFootprintWidgetState extends State<HouseFootprintWidget> with Ticker
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Title
+            const Text(
+              'TEST - Select Window Location',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
             const SizedBox(height: 6),
             const Text(
-              "We've auto-detected your primary window direction. If it looks off, just tap front, back, or sides to adjust.",
+              "Which side has the biggest windows? Tap the front, back, or side.",
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
@@ -345,17 +310,12 @@ class _HouseFootprintWidgetState extends State<HouseFootprintWidget> with Ticker
                   children: [
                     const Icon(Icons.check_circle, color: Colors.green, size: 20),
                     const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        "${_getPrimaryOrientationLabel()}-facing windows detected\nTap the side with the largest windows.",
-                        style: const TextStyle(
-                          fontSize: 15,
-                          color: Colors.green,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 2,
-                        softWrap: true,
-                        overflow: TextOverflow.visible,
+                    Text(
+                      "Primary facing windows: ${_getPrimaryOrientationLabel()}",
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: Colors.green,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ],
@@ -409,18 +369,12 @@ class _HouseFootprintWidgetState extends State<HouseFootprintWidget> with Ticker
                           child: LayoutBuilder(
                             builder: (context, constraints) {
                               final size = Size(constraints.maxWidth, constraints.maxHeight);
-                              return GestureDetector(
-                                onTapUp: (details) {
-                                  final localPosition = details.localPosition;
-                                  _handleTapOnHouse(localPosition, size);
-                                },
-                                child: CustomPaint(
-                                  size: size,
-                                  painter: _HouseFootprintPainter(
-                                    selectedSides: _selectedSides,
-                                    pulseAnimation: _pulseAnimation,
-                                    onSideSelected: _onSideSelected,
-                                  ),
+                              return CustomPaint(
+                                size: size,
+                                painter: _HouseFootprintPainter(
+                                  selectedSides: _selectedSides,
+                                  pulseAnimation: _pulseAnimation,
+                                  onSideSelected: _onSideSelected,
                                 ),
                               );
                             },
@@ -430,10 +384,10 @@ class _HouseFootprintWidgetState extends State<HouseFootprintWidget> with Ticker
                     ),
                     
                     // North indicator
-                    Positioned(
+                    const Positioned(
                       top: 16,
                       right: 16,
-                      child: _NorthIndicator(houseRotation: _houseRotation),
+                      child: _NorthIndicator(),
                     ),
                   ],
                 ),
@@ -504,7 +458,7 @@ class _SatelliteMapBackground extends StatelessWidget {
     final lng = coordinates['lng']?.toStringAsFixed(6);
     final mapUrl = 'https://maps.googleapis.com/maps/api/staticmap?'
         'center=$lat,$lng&'
-  'zoom=20&'
+        'zoom=19&'
         'size=300x300&'
         'scale=2&'
         'maptype=satellite&'
@@ -666,9 +620,7 @@ class _HouseFootprintPainter extends CustomPainter {
 }
 
 class _NorthIndicator extends StatelessWidget {
-  final double houseRotation;
-  
-  const _NorthIndicator({required this.houseRotation});
+  const _NorthIndicator();
 
   @override
   Widget build(BuildContext context) {
@@ -678,20 +630,16 @@ class _NorthIndicator extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.9),
         shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: Colors.black26),
       ),
-      child: Transform.rotate(
-        angle: -houseRotation * (pi / 180), // Rotate compass opposite to house rotation
-        child: const Icon(
-          Icons.navigation,
-          color: Colors.red,
-          size: 24,
+      child: const Center(
+        child: Text(
+          'N',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            color: Colors.red,
+          ),
         ),
       ),
     );
