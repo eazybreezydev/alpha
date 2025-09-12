@@ -211,6 +211,8 @@ class _HouseFootprintWidgetState extends State<HouseFootprintWidget> with Ticker
           setState(() {
             _selectedSides = {detectedDirection!};
           });
+          // Auto-complete selection when direction is detected
+          _completeSelection();
         }
       }
     } catch (e) {
@@ -469,25 +471,6 @@ class _HouseFootprintWidgetState extends State<HouseFootprintWidget> with Ticker
               ),
             ),
             const SizedBox(height: 16),
-          ],
-          
-          // Action buttons
-          if (_selectedSides.isNotEmpty) ...[
-            ElevatedButton(
-              onPressed: _completeSelection,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24),
-                ),
-              ),
-              child: const Text(
-                "Continue",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-            ),
           ],
         ],
         ),

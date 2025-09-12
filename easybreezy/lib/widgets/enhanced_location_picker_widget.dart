@@ -30,7 +30,6 @@ class EnhancedLocationPickerWidget extends StatefulWidget {
 
 class _EnhancedLocationPickerWidgetState extends State<EnhancedLocationPickerWidget> {
   final TextEditingController _addressController = TextEditingController();
-  final PageController _pageController = PageController();
   
   List<String> _addressSuggestions = [];
   bool _isLoadingSuggestions = false;
@@ -38,7 +37,6 @@ class _EnhancedLocationPickerWidgetState extends State<EnhancedLocationPickerWid
   Map<String, double>? _selectedCoords;
   HomeOrientation _selectedOrientation = HomeOrientation.north;
   List<WindowDirection> _selectedWindows = [];
-  int _currentStep = 0;
 
   @override
   void initState() {
@@ -59,7 +57,6 @@ class _EnhancedLocationPickerWidgetState extends State<EnhancedLocationPickerWid
   @override
   void dispose() {
     _addressController.dispose();
-    _pageController.dispose();
     super.dispose();
   }
 
@@ -138,16 +135,6 @@ class _EnhancedLocationPickerWidgetState extends State<EnhancedLocationPickerWid
     return null;
   }
 
-  void _proceedToHouseSelection() {
-    if (_address.isNotEmpty && _selectedCoords != null) {
-      setState(() => _currentStep = 1);
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    }
-  }
-
   void _onHouseSelectionComplete(List<WindowDirection> selectedSides, HomeOrientation orientation) {
     setState(() {
       _selectedWindows = selectedSides;
@@ -156,14 +143,6 @@ class _EnhancedLocationPickerWidgetState extends State<EnhancedLocationPickerWid
     
     // Complete the location selection
     widget.onLocationSelected(_address, _selectedCoords!, _selectedOrientation, _selectedWindows);
-  }
-
-  void _goBackToAddressStep() {
-    setState(() => _currentStep = 0);
-    _pageController.previousPage(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
   }
 
   @override
@@ -214,241 +193,9 @@ class _EnhancedLocationPickerWidgetState extends State<EnhancedLocationPickerWid
               }
             },
             onSelectionComplete: _onHouseSelectionComplete,
-            onBack: () {}, // Empty callback since we no longer need back navigation
           ),
         ),
       ],
-    );
-  }
-}
-
-class _ProgressIndicator extends StatelessWidget {
-  final int currentStep;
-
-  const _ProgressIndicator({required this.currentStep});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        _StepIndicator(
-          stepNumber: 1,
-          title: 'Enter Address',
-          isActive: currentStep == 0,
-          isCompleted: currentStep > 0,
-        ),
-        Expanded(
-          child: Container(
-            height: 2,
-            color: currentStep > 0 ? Colors.blue : Colors.grey.shade300,
-          ),
-        ),
-        _StepIndicator(
-          stepNumber: 2,
-          title: 'Select Windows',
-          isActive: currentStep == 1,
-          isCompleted: false,
-        ),
-      ],
-    );
-  }
-}
-
-class _StepIndicator extends StatelessWidget {
-  final int stepNumber;
-  final String title;
-  final bool isActive;
-  final bool isCompleted;
-
-  const _StepIndicator({
-    required this.stepNumber,
-    required this.title,
-    required this.isActive,
-    required this.isCompleted,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: isCompleted 
-                ? Colors.green 
-                : isActive 
-                    ? Colors.blue 
-                    : Colors.grey.shade300,
-          ),
-          child: Center(
-            child: isCompleted
-                ? const Icon(Icons.check, color: Colors.white, size: 16)
-                : Text(
-                    stepNumber.toString(),
-                    style: TextStyle(
-                      color: isActive ? Colors.white : Colors.grey.shade600,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 12,
-            color: isActive ? Colors.blue : Colors.grey.shade600,
-            fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _AddressInputStep extends StatelessWidget {
-  final TextEditingController addressController;
-  final String address;
-  final Map<String, double>? selectedCoords;
-  final List<String> addressSuggestions;
-  final bool isLoadingSuggestions;
-  final Function(String) onAddressChanged;
-  final Function(String) onAddressSubmitted;
-  final Function(String) onSuggestionTapped;
-  final VoidCallback onContinue;
-
-  const _AddressInputStep({
-    required this.addressController,
-    required this.address,
-    required this.selectedCoords,
-    required this.addressSuggestions,
-    required this.isLoadingSuggestions,
-    required this.onAddressChanged,
-    required this.onAddressSubmitted,
-    required this.onSuggestionTapped,
-    required this.onContinue,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text(
-            'Enter your home address so we can locate your house on the map.',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 24),
-        
-        TextFormField(
-          controller: addressController,
-          style: const TextStyle(color: Colors.black87),
-          decoration: const InputDecoration(
-            labelText: 'Home Address',
-            labelStyle: TextStyle(color: Colors.black87),
-            hintText: '123 Main St, City, State',
-            hintStyle: TextStyle(color: Colors.grey),
-            suffixIcon: Icon(Icons.location_on),
-            border: OutlineInputBorder(),
-          ),
-          onChanged: onAddressChanged,
-          onFieldSubmitted: onAddressSubmitted,
-        ),
-        
-        if (isLoadingSuggestions)
-          const Padding(
-            padding: EdgeInsets.only(top: 8.0),
-            child: LinearProgressIndicator(),
-          ),
-          
-        if (addressSuggestions.isNotEmpty)
-          Container(
-            constraints: const BoxConstraints(maxHeight: 200),
-            margin: const EdgeInsets.only(top: 8.0),
-            child: Card(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: addressSuggestions.length,
-                itemBuilder: (context, index) {
-                  final suggestion = addressSuggestions[index];
-                  return ListTile(
-                    title: Text(
-                      suggestion,
-                      style: const TextStyle(color: Colors.black87),
-                    ),
-                    onTap: () => onSuggestionTapped(suggestion),
-                  );
-                },
-              ),
-            ),
-          ),
-          
-        // Show map preview when coordinates are available
-        if (selectedCoords != null && address.isNotEmpty) ...[
-          const SizedBox(height: 24),
-          Center(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade400, width: 1),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 4,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Image.network(
-                  'https://maps.googleapis.com/maps/api/staticmap?center=${selectedCoords!['lat']?.toStringAsFixed(6)},${selectedCoords!['lng']?.toStringAsFixed(6)}&zoom=16&size=300x200&scale=2&markers=color:red%7C${selectedCoords!['lat']?.toStringAsFixed(6)},${selectedCoords!['lng']?.toStringAsFixed(6)}&key=$kGoogleApiKey',
-                  width: 300,
-                  height: 200,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    width: 300,
-                    height: 200,
-                    color: Colors.grey[200],
-                    child: const Center(
-                      child: Text(
-                        'Map preview unavailable',
-                        style: TextStyle(color: Colors.black87),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          Center(
-            child: ElevatedButton(
-              onPressed: onContinue,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24),
-                ),
-              ),
-              child: const Text(
-                'Continue',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ),
-        ],
-        ],
-      ),
     );
   }
 }
@@ -463,7 +210,6 @@ class _HouseSelectionStep extends StatelessWidget {
   final Function(String) onAddressSubmitted;
   final Function(String) onSuggestionTapped;
   final Function(List<WindowDirection>, HomeOrientation) onSelectionComplete;
-  final VoidCallback onBack;
 
   const _HouseSelectionStep({
     required this.addressController,
@@ -475,7 +221,6 @@ class _HouseSelectionStep extends StatelessWidget {
     required this.onAddressSubmitted,
     required this.onSuggestionTapped,
     required this.onSelectionComplete,
-    required this.onBack,
   });
 
   @override
@@ -542,26 +287,57 @@ class _HouseSelectionStep extends StatelessWidget {
           )
         else
           Expanded(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.location_on,
-                    size: 64,
-                    color: Colors.grey.shade400,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Enter your home address to see the satellite view',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey.shade600,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // Calculate appropriate sizes based on available height
+                final availableHeight = constraints.maxHeight;
+                final iconSize = availableHeight > 100 ? 48.0 : 32.0;
+                final fontSize = availableHeight > 100 ? 14.0 : 12.0;
+                final spacing = availableHeight > 100 ? 12.0 : 8.0;
+                
+                return Center(
+                  child: SingleChildScrollView(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.minHeight,
+                        maxHeight: constraints.maxHeight,
+                      ),
+                      child: IntrinsicHeight(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (availableHeight > 60) // Only show icon if enough space
+                              Icon(
+                                Icons.location_on,
+                                size: iconSize,
+                                color: Colors.grey.shade400,
+                              ),
+                            if (availableHeight > 60) SizedBox(height: spacing),
+                            Flexible(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: Text(
+                                  availableHeight > 80 
+                                    ? 'Enter your home address to see the satellite view'
+                                    : 'Enter address above',
+                                  style: TextStyle(
+                                    fontSize: fontSize,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                  maxLines: availableHeight > 80 ? 2 : 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                    textAlign: TextAlign.center,
                   ),
-                ],
-              ),
+                );
+              },
             ),
           ),
       ],
