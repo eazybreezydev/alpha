@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/home_config.dart';
 import '../providers/home_provider.dart';
+import '../widgets/enhanced_location_picker_widget.dart';
 import 'main_shell.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -20,20 +21,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   
   // Home configuration stored during onboarding
   HomeOrientation? _selectedOrientation;
-  final Map<WindowDirection, bool> _selectedWindows = {
-    WindowDirection.north: false,
-    WindowDirection.east: false,
-    WindowDirection.south: false,
-    WindowDirection.west: false,
-  };
+  List<WindowDirection> _selectedWindows = [];
+  bool _locationSetupComplete = false; // Track when enhanced location picker is complete
   
   // Address-related state variables
   late String _address;
   late TextEditingController _addressController;
   String? _selectedCountry;
   static const String kGoogleApiKey = 'AIzaSyBmZfcpnFKGRr2uzcL3ayXxUN-_fX6fy7s';
-  List<String> _addressSuggestions = [];
-  bool _isLoadingSuggestions = false;
   Map<String, double>? _selectedCoords;
 
   @override
@@ -61,15 +56,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         canProceed = false;
         errorMessage = 'Please select your country';
       }
-      // Check if address is filled
-      else if (_address.trim().isEmpty) {
+      // Check if enhanced location setup is complete
+      else if (!_locationSetupComplete) {
         canProceed = false;
-        errorMessage = 'Please enter your home address';
-      }
-      // Check if orientation is selected (this check will happen even if address is empty)
-      else if (_selectedOrientation == null) {
-        canProceed = false;
-        errorMessage = 'Please select which direction your home faces';
+        errorMessage = 'Please complete your location setup with satellite view';
       }
       
       if (!canProceed) {
@@ -102,6 +92,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       // On the last page (notifications), complete onboarding
       _completeOnboarding();
     }
+  }
+
+  // Callback for when enhanced location picker completes
+  void _onLocationSelected(String address, Map<String, double> coords, HomeOrientation orientation, List<WindowDirection> windows) {
+    setState(() {
+      _address = address;
+      _selectedCoords = coords;
+      _selectedOrientation = orientation;
+      _selectedWindows = windows;
+      _locationSetupComplete = true;
+    });
   }
 
   @override
@@ -365,7 +366,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
           const SizedBox(height: 16),
           
-          // Home Address Section
+          // Enhanced Location Setup Section
           Card(
             elevation: 4,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -378,7 +379,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   const Row(
                     children: [
                       Text(
-                        'Home Address',
+                        'Location & Orientation Setup',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -395,202 +396,54 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _addressController,
-                    style: const TextStyle(color: Colors.black87),
-                    decoration: const InputDecoration(
-                      labelText: 'Enter your home address',
-                      labelStyle: TextStyle(color: Colors.black87),
-                      hintText: '123 Main Street, Toronto ON',
-                      hintStyle: TextStyle(color: Colors.grey),
-                      prefixIcon: Icon(Icons.location_on, color: Colors.grey),
-                      border: OutlineInputBorder(),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Use satellite view to precisely locate your home and detect window orientations automatically.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
                     ),
-                    onChanged: (value) {
-                      setState(() {
-                        _address = value.trim();
-                      });
-                      _fetchAddressSuggestions(value);
-                    },
-                    onFieldSubmitted: (value) async {
-                      final trimmedValue = value.trim();
-                      setState(() {
-                        _address = trimmedValue;
-                      });
-                      if (trimmedValue.isNotEmpty && _selectedCoords == null) {
-                        final coords = await _fetchPlaceCoordinates(trimmedValue);
-                        if (coords != null) {
-                          setState(() {
-                            _selectedCoords = coords;
-                          });
-                          _fetchPlaceDetailsAndSuggestOrientation(trimmedValue);
-                        }
-                      }
-                    },
                   ),
-                  if (_isLoadingSuggestions)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 8.0),
-                      child: LinearProgressIndicator(),
+                  const SizedBox(height: 16),
+                  // Enhanced Location Picker
+                  Container(
+                    height: 500, // Set a fixed height for the picker
+                    child: EnhancedLocationPickerWidget(
+                      initialAddress: _address.isNotEmpty ? _address : null,
+                      initialOrientation: _selectedOrientation,
+                      initialCoords: _selectedCoords,
+                      selectedCountry: _selectedCountry,
+                      onLocationSelected: _onLocationSelected,
+                      showTitle: false, // Don't show title since we have our own
                     ),
-                  if (_addressSuggestions.isNotEmpty)
-                    Container(
-                      constraints: const BoxConstraints(maxHeight: 120),
-                      margin: const EdgeInsets.only(top: 8.0),
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: _addressSuggestions.length,
-                        itemBuilder: (context, index) {
-                          final suggestion = _addressSuggestions[index];
-                          return ListTile(
-                            dense: true,
-                            title: Text(
-                              suggestion,
-                              style: const TextStyle(color: Colors.black87, fontSize: 14),
-                            ),
-                            onTap: () async {
-                              final trimmedSuggestion = suggestion.trim();
-                              setState(() {
-                                _address = trimmedSuggestion;
-                                _addressController.text = trimmedSuggestion;
-                                _addressSuggestions = [];
-                              });
-                              final coords = await _fetchPlaceCoordinates(trimmedSuggestion);
-                              if (coords != null) {
-                                setState(() {
-                                  _selectedCoords = coords;
-                                });
-                              }
-                              _fetchPlaceDetailsAndSuggestOrientation(trimmedSuggestion);
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                  if (_selectedCoords != null && _address.isNotEmpty) ...[
+                  ),
+                  if (_locationSetupComplete) ...[
                     const SizedBox(height: 12),
-                    // Static Map Preview
-                    Center(
-                      child: ClipRRect(
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
                         borderRadius: BorderRadius.circular(8),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey.shade400, width: 1),
+                        border: Border.all(color: Colors.green.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.check_circle, color: Colors.green.shade600, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Location setup complete! Address: $_address, Orientation: ${_selectedOrientation?.name.toUpperCase()}',
+                              style: TextStyle(
+                                color: Colors.green.shade700,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                           ),
-                          child: Builder(
-                            builder: (context) {
-                              final lat = _selectedCoords!['lat']?.toStringAsFixed(6);
-                              final lng = _selectedCoords!['lng']?.toStringAsFixed(6);
-                              final mapUrl =
-                                  'https://maps.googleapis.com/maps/api/staticmap?center=$lat,$lng&zoom=15&size=280x140&scale=2&markers=color:red%7C$lat,$lng&key=$kGoogleApiKey';
-                              return Image.network(
-                                mapUrl,
-                                width: 280,
-                                height: 140,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Container(
-                                  width: 280,
-                                  height: 140,
-                                  color: Colors.grey[200],
-                                  child: const Center(
-                                    child: Text(
-                                      'Map preview unavailable',
-                                      style: TextStyle(color: Colors.black87),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
+                        ],
                       ),
                     ),
                   ],
-                ],
-              ),
-            ),
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // Home Orientation Section
-          Card(
-            elevation: 4,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            color: Colors.white,
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Which direction does your home face?',
-                          style: TextStyle(
-                            fontSize: 20, // Reduced from 22
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        ' *',
-                        style: TextStyle(
-                          fontSize: 20, // Reduced from 22
-                          fontWeight: FontWeight.bold,
-                          color: Colors.red,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Pick the direction your front door faces — it affects airflow and sunlight.',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: () {
-                          _showDirectionTooltip(context);
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Theme.of(context).primaryColor,
-                          ),
-                          child: const Icon(
-                            Icons.info_outline,
-                            size: 18,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Manual Orientation Picker
-                  Center(
-                    child: _OrientationPicker(
-                      selected: _selectedOrientation,
-                      onChanged: (o) {
-                        setState(() {
-                          _selectedOrientation = o;
-                        });
-                      },
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -873,163 +726,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Future<void> _fetchAddressSuggestions(String input) async {
-    if (input.isEmpty) {
-      setState(() {
-        _addressSuggestions = [];
-      });
-      return;
-    }
-    setState(() {
-      _isLoadingSuggestions = true;
-    });
-    
-    // Build URL with country filtering if a country is selected
-    String url = 'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${Uri.encodeComponent(input)}&types=address&key=$kGoogleApiKey';
-    
-    // Add country restriction if country is selected
-    if (_selectedCountry != null) {
-      url += '&components=country:$_selectedCountry';
-    }
-    
-    final response = await http.get(Uri.parse(url));
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      setState(() {
-        _addressSuggestions = (data['predictions'] as List)
-            .map((p) => p['description'] as String)
-            .toList();
-        _isLoadingSuggestions = false;
-      });
-    } else {
-      setState(() {
-        _addressSuggestions = [];
-        _isLoadingSuggestions = false;
-      });
-    }
-  }
-
-  Future<Map<String, double>?> _fetchPlaceCoordinates(String address) async {
-    // Build URL with country filtering if a country is selected
-    String autocompleteUrl = 'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${Uri.encodeComponent(address)}&types=address&key=$kGoogleApiKey';
-    
-    // Add country restriction if country is selected
-    if (_selectedCountry != null) {
-      autocompleteUrl += '&components=country:$_selectedCountry';
-    }
-    
-    final autocompleteResponse = await http.get(Uri.parse(autocompleteUrl));
-    if (autocompleteResponse.statusCode == 200) {
-      final data = json.decode(autocompleteResponse.body);
-      if (data['predictions'] != null && data['predictions'].isNotEmpty) {
-        final placeId = data['predictions'][0]['place_id'];
-        final detailsUrl = Uri.parse(
-          'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&fields=geometry&key=$kGoogleApiKey',
-        );
-        final detailsResponse = await http.get(detailsUrl);
-        if (detailsResponse.statusCode == 200) {
-          final detailsData = json.decode(detailsResponse.body);
-          final location = detailsData['result']?['geometry']?['location'];
-          if (location != null) {
-            return {
-              'lat': location['lat'] as double,
-              'lng': location['lng'] as double,
-            };
-          }
-        }
-      }
-    }
-    return null;
-  }
-
-  Future<void> _fetchPlaceDetailsAndSuggestOrientation(String address) async {
-    final url = Uri.parse(
-      'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${Uri.encodeComponent(address)}&types=address&key=$kGoogleApiKey',
-    );
-    final response = await http.get(url);
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      final predictions = data['predictions'] as List;
-      if (predictions.isNotEmpty) {
-        final placeId = predictions.first['place_id'];
-        final detailsUrl = Uri.parse(
-          'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&fields=geometry&key=$kGoogleApiKey',
-        );
-        final detailsResponse = await http.get(detailsUrl);
-        if (detailsResponse.statusCode == 200) {
-          final detailsData = json.decode(detailsResponse.body);
-          final location = detailsData['result']?['geometry']?['location'];
-          if (location != null) {
-            final double lng = location['lng'];
-            HomeOrientation suggestedOrientation;
-            if (lng > 0) {
-              suggestedOrientation = HomeOrientation.east;
-            } else if (lng < 0) {
-              suggestedOrientation = HomeOrientation.west;
-            } else {
-              suggestedOrientation = HomeOrientation.north;
-            }
-            setState(() {
-              _selectedOrientation = suggestedOrientation;
-            });
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Orientation auto-suggested: '
-                    '${suggestedOrientation.name[0].toUpperCase()}${suggestedOrientation.name.substring(1)} Facing'),
-                duration: const Duration(seconds: 2),
-              ),
-            );
-          }
-        }
-      }
-    }
-  }
-
-  void _showDirectionTooltip(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Row(
-            children: [
-              Icon(
-                Icons.lightbulb_outline,
-                color: Theme.of(context).primaryColor,
-                size: 24,
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'Why home orientation matters',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-            ],
-          ),
-          content: const Text(
-            'The direction your front door faces affects how sunlight enters and how air flows around your building. This helps us give you personalized recommendations for comfort and energy efficiency.',
-            style: TextStyle(fontSize: 16, height: 1.4),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(
-                foregroundColor: Theme.of(context).primaryColor,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              ),
-              child: const Text(
-                'Got it!',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   Future<void> _requestNotificationPermissions() async {
     // In a real app, you would request notification permissions here
     // For now, we'll just show a success message and complete onboarding
@@ -1055,32 +751,31 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       homeProvider.updateCountry(_selectedCountry!);
     }
     
-    // Assume all sides have windows since we removed the selection
-    final allWindows = {
-      WindowDirection.north: true,
-      WindowDirection.east: true,
-      WindowDirection.south: true,
-      WindowDirection.west: true,
+    // Convert list of selected windows to map format for provider
+    final windowsMap = {
+      WindowDirection.north: _selectedWindows.contains(WindowDirection.north),
+      WindowDirection.east: _selectedWindows.contains(WindowDirection.east),
+      WindowDirection.south: _selectedWindows.contains(WindowDirection.south),
+      WindowDirection.west: _selectedWindows.contains(WindowDirection.west),
     };
-    homeProvider.updateWindows(allWindows);
+    homeProvider.updateWindows(windowsMap);
     
-    // Ensure we get the latest address from the text controller
-    final finalAddress = _addressController.text.trim();
-    
-    // Save address and coordinates if available
-    if (_selectedCoords != null && finalAddress.isNotEmpty) {
+    // Use the address from enhanced location picker
+    if (_selectedCoords != null && _address.isNotEmpty) {
       homeProvider.updateAddressWithCoords(
-        finalAddress,
+        _address,
         _selectedCoords!['lat'],
         _selectedCoords!['lng'],
       );
-    } else if (finalAddress.isNotEmpty) {
-      homeProvider.updateAddress(finalAddress);
+    } else if (_address.isNotEmpty) {
+      homeProvider.updateAddress(_address);
     }
     
-    // Debug print to verify address is being saved
-    print('Onboarding: Saving address: "$finalAddress"');
+    // Debug print to verify configuration is being saved
+    print('Onboarding: Saving address: "$_address"');
     print('Onboarding: Coordinates: $_selectedCoords');
+    print('Onboarding: Orientation: ${_selectedOrientation?.name}');
+    print('Onboarding: Windows: $_selectedWindows');
     
     homeProvider.completeOnboarding();
     
@@ -1091,144 +786,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           builder: (context) => const MainShell(),
         ),
       );
-    }
-  }
-}
-
-// Orientation Picker widget - Compass Style Layout
-class _OrientationPicker extends StatelessWidget {
-  final HomeOrientation? selected;
-  final ValueChanged<HomeOrientation> onChanged;
-  const _OrientationPicker({required this.selected, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      child: SizedBox(
-        width: 180,
-        height: 180,
-        child: Stack(
-          children: [
-            // North button (top)
-            Positioned(
-              top: 0,
-              left: 60,
-              child: _buildDirectionButton(context, HomeOrientation.north),
-            ),
-            // East button (right)
-            Positioned(
-              right: 0,
-              top: 60,
-              child: _buildDirectionButton(context, HomeOrientation.east),
-            ),
-            // South button (bottom)
-            Positioned(
-              bottom: 0,
-              left: 60,
-              child: _buildDirectionButton(context, HomeOrientation.south),
-            ),
-            // West button (left)
-            Positioned(
-              left: 0,
-              top: 60,
-              child: _buildDirectionButton(context, HomeOrientation.west),
-            ),
-            // Center compass decoration
-            Positioned(
-              top: 75,
-              left: 75,
-              child: Container(
-                width: 30,
-                height: 30,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.grey.shade300, width: 1),
-                ),
-                child: Icon(
-                  Icons.explore_outlined,
-                  color: Colors.grey.shade600,
-                  size: 18,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDirectionButton(BuildContext context, HomeOrientation orientation) {
-    final isSelected = orientation == selected;
-    
-    return GestureDetector(
-      onTap: () => onChanged(orientation),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        width: 60,
-        height: 60,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: isSelected 
-              ? Theme.of(context).primaryColor 
-              : Colors.white,
-          border: Border.all(
-            color: isSelected 
-                ? Theme.of(context).primaryColor 
-                : Colors.grey[300]!,
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: isSelected 
-                  ? Theme.of(context).primaryColor.withOpacity(0.4)
-                  : Colors.black.withOpacity(0.08),
-              blurRadius: isSelected ? 8 : 3,
-              offset: Offset(0, isSelected ? 3 : 1),
-              spreadRadius: isSelected ? 1 : 0,
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AnimatedScale(
-              scale: isSelected ? 1.1 : 1.0,
-              duration: const Duration(milliseconds: 200),
-              child: Icon(
-                _getDirectionIcon(orientation),
-                color: isSelected ? Colors.white : Theme.of(context).primaryColor,
-                size: 24,
-              ),
-            ),
-            const SizedBox(height: 2),
-            AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 200),
-              style: TextStyle(
-                color: isSelected ? Colors.white : Colors.black87,
-                fontWeight: FontWeight.bold,
-                fontSize: isSelected ? 14 : 12,
-              ),
-              child: Text(orientation.name[0].toUpperCase()),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  IconData _getDirectionIcon(HomeOrientation orientation) {
-    switch (orientation) {
-      case HomeOrientation.north:
-        return Icons.north;
-      case HomeOrientation.east:
-        return Icons.east;
-      case HomeOrientation.south:
-        return Icons.south;
-      case HomeOrientation.west:
-        return Icons.west;
     }
   }
 }

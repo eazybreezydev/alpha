@@ -22,7 +22,6 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   late HomeOrientation _selectedOrientation;
-  late Map<WindowDirection, bool> _selectedWindows;
   late RangeValues _tempRange;
   late bool _notificationsEnabled;
   late bool _useCelsius; // Add state for temperature unit
@@ -91,7 +90,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final homeConfig = homeProvider.homeConfig;
     
     _selectedOrientation = homeConfig.orientation;
-    _selectedWindows = Map.from(homeConfig.windows);
     _tempRange = RangeValues(
       homeConfig.comfortTempMin,
       homeConfig.comfortTempMax,
@@ -172,7 +170,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     
     // Update all settings
     homeProvider.updateHomeOrientation(_selectedOrientation);
-    homeProvider.updateWindows(_selectedWindows);
     homeProvider.updateComfortTemperature(
       _tempRange.start,
       _tempRange.end,
@@ -450,50 +447,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   children: [
                   const SizedBox(height: 16),
-                  // Window Selection Section
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Card(
-                      elevation: 8,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      color: Colors.white,
-                      child: Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Window Directions',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Select which sides of your home have windows. This helps us recommend the best breeze setup.',
-                              style: TextStyle(color: Colors.blueGrey, fontSize: 13),
-                            ),
-                            const SizedBox(height: 12),
-                            MultiWindowPickerWidget(
-                              selectedWindows: _selectedWindows.entries
-                                  .where((e) => e.value)
-                                  .map((e) => e.key)
-                                  .toSet(),
-                              onChanged: (selected) {
-                                setState(() {
-                                  for (var dir in WindowDirection.values) {
-                                    _selectedWindows[dir] = selected.contains(dir);
-                                  }
-                                });
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
                   
                   // Auto-Refresh Section
                   Padding(
@@ -995,56 +948,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           
           const SizedBox(height: 24),
           
-          // Windows Section
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Card(
-              elevation: 8,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              color: Colors.white,
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Windows',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    ...WindowDirection.values.map((direction) {
-                      return CheckboxListTile(
-                        title: Text(
-                          '${direction.name} Windows',
-                          style: const TextStyle(color: Colors.black87),
-                        ),
-                        subtitle: Text(
-                          'Windows on the ${direction.name} side of your home',
-                          style: const TextStyle(color: Colors.black87),
-                        ),
-                        value: _selectedWindows[direction] ?? false,
-                        activeColor: Theme.of(context).primaryColor,
-                        onChanged: (bool? value) {
-                          setState(() {
-                            if (value != null) {
-                              _selectedWindows[direction] = value;
-                            }
-                          });
-                        },
-                      );
-                    }).toList(),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          
-          const SizedBox(height: 24),
-          
           // Comfort Temperature Range Section
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -1440,12 +1343,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onPressed: () {
                 setState(() {
                   _selectedOrientation = HomeOrientation.north;
-                  _selectedWindows = {
-                    WindowDirection.north: false,
-                    WindowDirection.east: false,
-                    WindowDirection.south: false,
-                    WindowDirection.west: false,
-                  };
                   _tempRange = const RangeValues(65.0, 78.0);
                   _notificationsEnabled = true;
                   _useCelsius = false;
