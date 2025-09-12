@@ -139,28 +139,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 children: [
-                  // Required fields note (only show on page 1 - home orientation)
-                  if (_currentPage == 1)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.info_outline, 
-                               size: 16, 
-                               color: Colors.grey[600]),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Fields marked with * are required',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   if (_currentPage > 0)
                     TextButton(
                       onPressed: () {

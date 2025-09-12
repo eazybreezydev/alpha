@@ -625,12 +625,12 @@ class _HouseFootprintPainter extends CustomPainter {
       borderPaint,
     );
 
-    // Draw side label
+    // Draw side label with rotation for West and East
     final textPainter = TextPainter(
       text: TextSpan(
-        text: side.name.substring(0, 1).toUpperCase(),
+        text: _getFullDirectionName(side),
         style: TextStyle(
-          color: isSelected ? Colors.white : Colors.black87,
+          color: Colors.white,
           fontSize: 12,
           fontWeight: FontWeight.bold,
         ),
@@ -638,13 +638,46 @@ class _HouseFootprintPainter extends CustomPainter {
       textDirection: TextDirection.ltr,
     );
     textPainter.layout();
-    textPainter.paint(
-      canvas,
-      Offset(
-        scaledRect.center.dx - textPainter.width / 2,
-        scaledRect.center.dy - textPainter.height / 2,
-      ),
-    );
+    
+    // Apply rotation for West and East directions
+    canvas.save();
+    
+    final centerX = scaledRect.center.dx;
+    final centerY = scaledRect.center.dy;
+    
+    if (side == WindowDirection.west) {
+      // Rotate 90 degrees counter-clockwise for West
+      canvas.translate(centerX, centerY);
+      canvas.rotate(-pi / 2);
+      canvas.translate(-textPainter.width / 2, -textPainter.height / 2);
+    } else if (side == WindowDirection.east) {
+      // Rotate 90 degrees clockwise for East
+      canvas.translate(centerX, centerY);
+      canvas.rotate(pi / 2);
+      canvas.translate(-textPainter.width / 2, -textPainter.height / 2);
+    } else {
+      // No rotation for North and South
+      canvas.translate(
+        centerX - textPainter.width / 2,
+        centerY - textPainter.height / 2,
+      );
+    }
+    
+    textPainter.paint(canvas, Offset.zero);
+    canvas.restore();
+  }
+
+  String _getFullDirectionName(WindowDirection direction) {
+    switch (direction) {
+      case WindowDirection.north:
+        return 'North';
+      case WindowDirection.east:
+        return 'East';
+      case WindowDirection.south:
+        return 'South';
+      case WindowDirection.west:
+        return 'West';
+    }
   }
 
   @override
