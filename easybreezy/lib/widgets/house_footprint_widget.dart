@@ -55,7 +55,6 @@ class _HouseFootprintWidgetState extends State<HouseFootprintWidget> with Ticker
   Set<WindowDirection> _selectedSides = {};
   double _houseRotation = 0.0; // Rotation to align house with north up
   bool _isLoading = true;
-  bool _showSunlightHelper = false;
   Map<String, dynamic>? _buildingData;
 
   @override
@@ -239,13 +238,9 @@ class _HouseFootprintWidgetState extends State<HouseFootprintWidget> with Ticker
       }
     });
 
-    // Check if multiple sides selected
-    if (_selectedSides.length > 1) {
-      if (mounted) {
-        setState(() => _showSunlightHelper = true);
-      }
-    } else if (_selectedSides.length == 1) {
-      // Single side selected - determine orientation
+    // Auto-complete selection for both single and multiple sides
+    if (_selectedSides.length >= 1) {
+      // Determine orientation and complete selection
       _completeSelection();
     }
   }
@@ -333,7 +328,7 @@ class _HouseFootprintWidgetState extends State<HouseFootprintWidget> with Ticker
             // Dynamic badge for detected primary facing windows
             Center(
               child: Tooltip(
-                message: 'Window orientation matters for energy efficiency. South-facing windows receive more sunlight, affecting heating and cooling costs.',
+                message: 'We detect your primary window orientation to predict wind patterns and find the perfect breeze! Knowing which direction your main windows face helps us recommend exactly when to open them for optimal natural airflow and cooling.',
                 decoration: BoxDecoration(
                   color: Colors.black87,
                   borderRadius: BorderRadius.circular(8),
@@ -476,18 +471,8 @@ class _HouseFootprintWidgetState extends State<HouseFootprintWidget> with Ticker
             const SizedBox(height: 16),
           ],
           
-          // Sunlight Helper (shown when multiple sides selected)
-          if (_showSunlightHelper) 
-            _AutoSunExposureWidget(
-              selectedSides: _selectedSides.toList(),
-              primaryOrientation: _getPrimaryOrientationLabel(),
-              onComplete: () {
-                _completeSelection();
-              },
-            ),
-          
           // Action buttons
-          if (_selectedSides.isNotEmpty && !_showSunlightHelper) ...[
+          if (_selectedSides.isNotEmpty) ...[
             ElevatedButton(
               onPressed: _completeSelection,
               style: ElevatedButton.styleFrom(
@@ -716,6 +701,8 @@ class _NorthIndicator extends StatelessWidget {
   }
 }
 
+// TEMPORARILY REMOVED - Can be repurposed for homepage sun orientation display
+/*
 class _AutoSunExposureWidget extends StatelessWidget {
   final List<WindowDirection> selectedSides;
   final String primaryOrientation;
@@ -809,6 +796,7 @@ class _AutoSunExposureWidget extends StatelessWidget {
     );
   }
 }
+*/
 
 class _TimeButton extends StatelessWidget {
   final String label;

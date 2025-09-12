@@ -24,11 +24,25 @@ class _EnhancedAddLocationModalState extends State<EnhancedAddLocationModal> {
   HomeOrientation _selectedOrientation = HomeOrientation.north;
   List<WindowDirection> _selectedWindows = [];
   bool _isLocationValid = false;
+  bool _isFormValid = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController.addListener(_validateForm);
+  }
 
   @override
   void dispose() {
+    _nameController.removeListener(_validateForm);
     _nameController.dispose();
     super.dispose();
+  }
+
+  void _validateForm() {
+    setState(() {
+      _isFormValid = _nameController.text.trim().isNotEmpty && _isLocationValid;
+    });
   }
 
   void _onLocationSelected(String address, Map<String, double> coords, HomeOrientation orientation, List<WindowDirection> windows) {
@@ -39,6 +53,7 @@ class _EnhancedAddLocationModalState extends State<EnhancedAddLocationModal> {
       _selectedWindows = windows;
       _isLocationValid = address.isNotEmpty && coords.isNotEmpty;
     });
+    _validateForm(); // Trigger form validation when location changes
   }
 
   void _saveLocation() async {
@@ -224,7 +239,7 @@ class _EnhancedAddLocationModalState extends State<EnhancedAddLocationModal> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: _isLocationValid ? _saveLocation : null,
+                      onPressed: _isFormValid ? _saveLocation : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
                         foregroundColor: Colors.white,

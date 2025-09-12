@@ -269,6 +269,9 @@ class EasyFlowScoreModel {
 
   // Generate intelligent, personalized ventilation advice
   String generateVentilationHint() {
+    // Debug print to see what data we're working with
+    print("DEBUG generateVentilationHint: airQualityLevel='$airQualityLevel', temperature=$temperature, windSpeed=$windSpeed, humidity=$humidity, isCelsius=$isCelsius");
+    
     // Convert temperature to Celsius for consistent messaging
     double tempCelsius;
     if (isCelsius) {
@@ -296,6 +299,32 @@ class EasyFlowScoreModel {
     
     if (airQualityLevel.toLowerCase() == 'moderate') {
       return "Air quality is moderate. Consider keeping windows closed if you have respiratory sensitivities.";
+    }
+
+    // Handle unknown air quality (when data isn't available yet)
+    if (airQualityLevel.toLowerCase() == 'unknown') {
+      // Provide recommendations based on temperature and wind when air quality is unknown
+      if (tempCelsius >= 18 && tempCelsius <= 25 && windSpeedKmh >= 5 && windSpeedKmh <= 25) {
+        String windDetail = formatWindSpeed(windSpeed, isCelsius);
+        String tempDetail = formatTemperature(temperature, isCelsius);
+        String windDirName = getWindDirectionName(windDirection);
+        return "Good weather conditions for ventilation! Temperature: $tempDetail, Wind: $windDetail from the $windDirName. Air quality data is still loading.";
+      }
+      
+      if (tempCelsius < 15) {
+        String tempDetail = formatTemperature(temperature, isCelsius);
+        return "It's a bit cool outside ($tempDetail). Consider brief ventilation periods. Air quality data is still loading.";
+      }
+      
+      if (tempCelsius > 28) {
+        String tempDetail = formatTemperature(temperature, isCelsius);
+        return "It's quite warm outside ($tempDetail). Consider ventilation during cooler periods. Air quality data is still loading.";
+      }
+      
+      // Default for unknown air quality with moderate conditions
+      String windDetail = formatWindSpeed(windSpeed, isCelsius);
+      String tempDetail = formatTemperature(temperature, isCelsius);
+      return "Weather conditions are moderate. Temperature: $tempDetail, Wind: $windDetail. Air quality data is still loading.";
     }
 
     // Check for extreme wind conditions (using km/h thresholds)
@@ -334,7 +363,7 @@ class EasyFlowScoreModel {
     }
 
     // Check for optimal conditions
-    if (airQualityLevel.toLowerCase() == 'good' && 
+    if ((airQualityLevel.toLowerCase() == 'good' || airQualityLevel.toLowerCase() == 'fair') && 
         windSpeedKmh >= 8 && windSpeedKmh <= 24 && // ~5-15 mph converted to km/h
         tempCelsius >= 18 && tempCelsius <= 25) {
       
@@ -350,13 +379,14 @@ class EasyFlowScoreModel {
             
         String windDetail = formatWindSpeed(windSpeed, isCelsius);
         String windDirName = getWindDirectionName(windDirection);
+        String airQualityNote = airQualityLevel.toLowerCase() == 'fair' ? " (Air quality is fair)" : "";
         
-        return "Perfect conditions for cross-ventilation $hoursText! Open your $windowsText for optimal airflow. Current wind: $windDetail from the $windDirName.";
+        return "Perfect conditions for cross-ventilation $hoursText! Open your $windowsText for optimal airflow. Current wind: $windDetail from the $windDirName.$airQualityNote";
       }
     }
 
     // Check for good but not perfect conditions
-    if (airQualityLevel.toLowerCase() == 'good' && 
+    if ((airQualityLevel.toLowerCase() == 'good' || airQualityLevel.toLowerCase() == 'fair') && 
         windSpeedKmh >= 5 && windSpeedKmh <= 25 && // Changed from 32 to 25 to match getSmartStatusMessage threshold
         tempCelsius >= 16 && tempCelsius <= 27) {
       
@@ -369,13 +399,15 @@ class EasyFlowScoreModel {
         String windDetail = formatWindSpeed(windSpeed, isCelsius);
         String windDirName = getWindDirectionName(windDirection);
         String tempDetail = formatTemperature(temperature, isCelsius);
+        String airQualityNote = airQualityLevel.toLowerCase() == 'fair' ? " Air quality is fair but acceptable." : "";
         
-        return "Good conditions for fresh air! Open your $windowsText for natural ventilation. Wind: $windDetail from the $windDirName. Temperature: $tempDetail.";
+        return "Good conditions for fresh air! Open your $windowsText for natural ventilation. Wind: $windDetail from the $windDirName. Temperature: $tempDetail.$airQualityNote";
       }
       
       String windDetail = formatWindSpeed(windSpeed, isCelsius);
       String windDirName = getWindDirectionName(windDirection);
-      return "Good conditions for opening windows! Fresh air will help improve indoor air quality. Current wind: $windDetail from the $windDirName.";
+      String airQualityNote = airQualityLevel.toLowerCase() == 'fair' ? " Air quality is fair but acceptable for ventilation." : "";
+      return "Good conditions for opening windows! Fresh air will help improve indoor air quality. Current wind: $windDetail from the $windDirName.$airQualityNote";
     }
 
     // Light wind conditions
@@ -397,27 +429,30 @@ class EasyFlowScoreModel {
     }
 
     // Moderate conditions
-    if (airQualityLevel.toLowerCase() == 'good' && tempCelsius >= 15 && tempCelsius <= 28) {
+    if ((airQualityLevel.toLowerCase() == 'good' || airQualityLevel.toLowerCase() == 'fair') && tempCelsius >= 15 && tempCelsius <= 28) {
       String windDetail = formatWindSpeed(windSpeed, isCelsius);
       String tempDetail = formatTemperature(temperature, isCelsius);
       String windDirName = getWindDirectionName(windDirection);
+      String airQualityNote = airQualityLevel.toLowerCase() == 'fair' ? " Air quality is fair." : "";
       
-      return "Moderate conditions for ventilation. Current: $tempDetail, wind $windDetail from the $windDirName. Consider opening windows based on your comfort preferences.";
+      return "Moderate conditions for ventilation. Current: $tempDetail, wind $windDetail from the $windDirName. Consider opening windows based on your comfort preferences.$airQualityNote";
     }
 
     // Cool weather conditions (10°C to 15°C)
-    if (airQualityLevel.toLowerCase() == 'good' && tempCelsius >= 10 && tempCelsius < 15) {
+    if ((airQualityLevel.toLowerCase() == 'good' || airQualityLevel.toLowerCase() == 'fair') && tempCelsius >= 10 && tempCelsius < 15) {
       String windDetail = formatWindSpeed(windSpeed, isCelsius);
       String tempDetail = formatTemperature(temperature, isCelsius);
+      String airQualityNote = airQualityLevel.toLowerCase() == 'fair' ? " Air quality is fair." : "";
       
-      return "Cool conditions today ($tempDetail). Brief ventilation periods can help refresh indoor air, but consider limiting window opening time to avoid overcooling your home.";
+      return "Cool conditions today ($tempDetail). Brief ventilation periods can help refresh indoor air, but consider limiting window opening time to avoid overcooling your home.$airQualityNote";
     }
 
     // Cold weather conditions (below 10°C)
-    if (airQualityLevel.toLowerCase() == 'good' && tempCelsius < 10) {
+    if ((airQualityLevel.toLowerCase() == 'good' || airQualityLevel.toLowerCase() == 'fair') && tempCelsius < 10) {
       String tempDetail = formatTemperature(temperature, isCelsius);
+      String airQualityNote = airQualityLevel.toLowerCase() == 'fair' ? " Air quality is fair." : "";
       
-      return "It's quite cold outside ($tempDetail). Consider very brief ventilation periods only if needed, as extended window opening will significantly cool your home.";
+      return "It's quite cold outside ($tempDetail). Consider very brief ventilation periods only if needed, as extended window opening will significantly cool your home.$airQualityNote";
     }
 
     // Default fallback
