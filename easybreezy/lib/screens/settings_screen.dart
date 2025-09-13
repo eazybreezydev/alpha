@@ -97,13 +97,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _notificationsEnabled = homeConfig.notificationsEnabled;
     _useCelsius = homeProvider.isCelsius;
     
-    // Use current active location address instead of home config address
+    // Use current active location name to match homepage display
     final currentLocation = locationProvider.currentLocation;
     if (currentLocation != null) {
-      // Use address field if available, otherwise fall back to name
-      _address = currentLocation.address?.isNotEmpty == true 
-          ? currentLocation.address! 
-          : currentLocation.name;
+      // Use name field to match homepage display
+      _address = currentLocation.name;
     } else {
       _address = homeConfig.address ?? '';
     }
@@ -1024,23 +1022,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     // Update address controller when current location changes
                     final currentLocation = locationProvider.currentLocation;
                     if (currentLocation != null) {
-                      // Use address field if available, otherwise fall back to name
-                      final locationAddress = currentLocation.address?.isNotEmpty == true 
-                          ? currentLocation.address! 
-                          : currentLocation.name;
+                      // Use name field to match homepage display
+                      final locationName = currentLocation.name;
                       
-                      if (_addressController.text != locationAddress) {
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          _addressController.text = locationAddress;
-                          setState(() {
-                            _address = locationAddress;
-                            // Also update coordinates when location changes
-                            _selectedCoords = {
-                              'lat': currentLocation.latitude,
-                              'lng': currentLocation.longitude,
-                            };
-                          });
-                        });
+                      // Ensure text field always displays current location name
+                      if (_addressController.text != locationName) {
+                        // Update immediately, outside of post frame callback for more reliable updates
+                        _addressController.text = locationName;
+                        _address = locationName;
+                        _selectedCoords = {
+                          'lat': currentLocation.latitude,
+                          'lng': currentLocation.longitude,
+                        };
                       }
                     }
                     
